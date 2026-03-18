@@ -1,0 +1,41 @@
+[
+  {
+    "id": "m1",
+    "sujet": "Visite disponible cette semaine ?",
+    "texte": "Bonjour Marie, votre appartement au centre-ville de Montréal m’intéresse beaucoup. Serait-il possible d’organiser une visite mercredi ou jeudi en fin de journée ? Merci.",
+    "senderId": "u2",
+    "senderName": "Jean Gagnon",
+    "receiverId": "u1",
+    "receiverName": "Marie Tremblay",
+    "announcementId": "1",
+    "announcementTitre": "Appartement 5 1/2 centre-ville Montréal",
+    "read": false,
+    "createdAt": "2026-03-14T14:30:00.000Z"
+  },
+  {
+    "id": "m2",
+    "sujet": "Question sur le stationnement",
+    "texte": "Bonjour Sarah, je voudrais savoir si le stationnement extérieur est inclus sans frais supplémentaires dans le loyer mensuel du condo à Laval. Merci d’avance.",
+    "senderId": "u1",
+    "senderName": "Marie Tremblay",
+    "receiverId": "u3",
+    "receiverName": "Sarah Dupont",
+    "announcementId": "3",
+    "announcementTitre": "Condo 3 1/2 moderne à Laval",
+    "read": true,
+    "createdAt": "2026-03-13T18:10:00.000Z"
+  },
+  {
+    "id": "m3",
+    "sujet": "Studio disponible dès le mois prochain ?",
+    "texte": "Bonjour Jean, je cherche un studio meublé à Québec pour le mois prochain. Votre annonce correspond bien à mes besoins. Est-il toujours disponible ?",
+    "senderId": "u3",
+    "senderName": "Sarah Dupont",
+    "receiverId": "u2",
+    "receiverName": "Jean Gagnon",
+    "announcementId": "2",
+    "announcementTitre": "Studio meublé Vieux-Québec",
+    "read": false,
+    "createdAt": "2026-03-15T09:45:00.000Z"
+  }
+]

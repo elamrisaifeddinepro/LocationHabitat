@@ -1,0 +1,35 @@
+[
+  {
+    "id": "u1",
+    "nom": "Tremblay",
+    "prenom": "Marie",
+    "numero": "A001",
+    "telephone": "5148234567",
+    "courriel": "marie.tremblay@example.com",
+    "adresse": "Montréal, QC",
+    "password": "Test1234!",
+    "created_at": "2026-02-01T00:00:00Z"
+  },
+  {
+    "id": "u2",
+    "nom": "Gagnon",
+    "prenom": "Jean",
+    "numero": "A002",
+    "telephone": "5140001111",
+    "courriel": "jean.gagnon@example.com",
+    "adresse": "Québec, QC",
+    "password": "Test1234!",
+    "created_at": "2026-02-01T00:00:00Z"
+  },
+  {
+    "id": "u3",
+    "nom": "Dupont",
+    "prenom": "Sarah",
+    "numero": "A003",
+    "telephone": "5142223333",
+    "courriel": "sarah.dupont@example.com",
+    "adresse": "Laval, QC",
+    "password": "Test1234!",
+    "created_at": "2026-02-01T00:00:00Z"
+  }
+]

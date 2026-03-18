@@ -1,0 +1,83 @@
+<div class="app-container">
+  <header class="header">
+    <div class="header-content">
+      <button mat-button routerLink="/" class="logo-button">
+        <mat-icon class="logo-icon">home</mat-icon>
+        <span class="logo-text">Location Habitat</span>
+      </button>
+
+      <nav class="nav-center">
+        <button mat-button routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+          Accueil
+        </button>
+        <button mat-button routerLink="/announcements" routerLinkActive="active-link" class="nav-item">
+          Annonces
+        </button>
+        @if (currentUser) {
+          <button mat-button routerLink="/favorites" routerLinkActive="active-link" class="nav-item favorites-btn">
+            <mat-icon [matBadge]="favoritesCount" [matBadgeHidden]="favoritesCount === 0" matBadgeColor="accent">favorite_border</mat-icon>
+            <span>Favoris</span>
+          </button>
+          <button mat-button routerLink="/my-announcements" routerLinkActive="active-link" class="nav-item">
+            Mes annonces
+          </button>
+        }
+      </nav>
+
+      <nav class="nav-right">
+        @if (currentUser) {
+          <button mat-button routerLink="/messages" routerLinkActive="active-link" class="nav-item messages-btn">
+            <mat-icon [matBadge]="unreadCount" [matBadgeHidden]="unreadCount === 0" matBadgeColor="warn">
+              mail_outline
+            </mat-icon>
+          </button>
+
+          <button mat-button routerLink="/announcements/new" class="host-btn">
+            Créer une annonce
+          </button>
+
+          <button class="user-menu-btn" [matMenuTriggerFor]="userMenu">
+            <mat-icon>menu</mat-icon>
+            <mat-icon>account_circle</mat-icon>
+          </button>
+
+          <mat-menu #userMenu="matMenu" class="user-menu-panel">
+            <div class="user-info">
+              <p class="user-name">{{ currentUser.prenom }} {{ currentUser.nom }}</p>
+              <p class="user-email">{{ currentUser.courriel }}</p>
+            </div>
+            <mat-divider></mat-divider>
+            <button mat-menu-item routerLink="/favorites">
+              <mat-icon>favorite</mat-icon>
+              <span>Mes favoris</span>
+            </button>
+            <button mat-menu-item routerLink="/my-announcements">
+              <mat-icon>apartment</mat-icon>
+              <span>Mes annonces</span>
+            </button>
+            <button mat-menu-item routerLink="/profile">
+              <mat-icon>person</mat-icon>
+              <span>Mon profil</span>
+            </button>
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="logout()">
+              <mat-icon>logout</mat-icon>
+              <span>Déconnexion</span>
+            </button>
+          </mat-menu>
+        } @else {
+          <button mat-button routerLink="/auth/login" class="nav-item">
+            Connexion
+          </button>
+          <button mat-raised-button color="primary" routerLink="/auth/register" class="signup-btn">
+            Inscription
+          </button>
+        }
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

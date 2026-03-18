@@ -1,0 +1,92 @@
+<section class="home-page">
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <span class="eyebrow">Marketplace immobilière</span>
+        <h1>Trouvez, enregistrez et contactez en toute simplicité.</h1>
+        <p>
+          LocationHabitat vous permet de parcourir les annonces, d'enregistrer vos logements favoris
+          et de contacter directement les propriétaires.
+        </p>
+        <div class="hero-actions">
+          <button mat-raised-button color="primary" class="hero-primary-btn" routerLink="/announcements">
+            <mat-icon>search</mat-icon>
+            <span>Explorer les annonces</span>
+          </button>
+          <button mat-raised-button color="primary" class="hero-primary-btn secondary-hero-btn" routerLink="/announcements/new">
+            <mat-icon>add_home</mat-icon>
+            <span>Publier une annonce</span>
+          </button>
+        </div>
+      </div>
+
+      <mat-card class="search-card">
+        <h2>Recherche rapide</h2>
+        <p>Filtrez les annonces selon votre ville et votre budget mensuel.</p>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Ville ou quartier</mat-label>
+          <input matInput [formControl]="cityControl" placeholder="Ex. Montréal, Laval, Québec">
+        </mat-form-field>
+
+        <div class="price-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Budget min</mat-label>
+            <input matInput type="number" [formControl]="minPriceControl" placeholder="0">
+            <span matTextSuffix>$</span>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Budget max</mat-label>
+            <input matInput type="number" [formControl]="maxPriceControl" placeholder="3000">
+            <span matTextSuffix>$</span>
+          </mat-form-field>
+        </div>
+
+        <button mat-raised-button color="primary" class="full-width" (click)="searchAnnouncements()">
+          <mat-icon>search</mat-icon>
+          Rechercher
+        </button>
+      </mat-card>
+    </div>
+  </section>
+
+  <section class="features-section">
+    <mat-card class="feature-card">
+      <mat-icon>search</mat-icon>
+      <h3>Recherche intuitive</h3>
+      <p>Consultez les annonces par localisation, budget et disponibilité.</p>
+    </mat-card>
+
+    <mat-card class="feature-card">
+      <mat-icon>favorite</mat-icon>
+      <h3>Annonces enregistrées</h3>
+      <p>Sauvegardez vos logements préférés dans une liste dédiée pour les retrouver rapidement.</p>
+    </mat-card>
+
+    <mat-card class="feature-card">
+      <mat-icon>mail</mat-icon>
+      <h3>Contact direct</h3>
+      <p>Échangez facilement avec les propriétaires depuis la fiche détaillée de l'annonce.</p>
+    </mat-card>
+  </section>
+
+  <section class="recent-section">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow">Annonces récentes</span>
+        <h2>Quelques logements disponibles</h2>
+      </div>
+      <button mat-button routerLink="/announcements">Voir tout</button>
+    </div>
+
+    @if (featuredAnnouncements$ | async; as announcements) {
+      <div class="featured-grid">
+        @for (announcement of announcements; track announcement.id) {
+          <app-announcement-card [announcement]="announcement"></app-announcement-card>
+        }
+      </div>
+    }
+  </section>
+</section>
