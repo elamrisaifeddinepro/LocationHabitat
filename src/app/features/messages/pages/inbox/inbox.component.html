@@ -1,0 +1,59 @@
+<div class="inbox-container">
+  <div class="header">
+    <h1>Messages reçus</h1>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-state">
+      <mat-icon>hourglass_top</mat-icon>
+      <p>Chargement des messages…</p>
+    </div>
+  } @else if (messages.length > 0) {
+    <div class="messages-list">
+      @for (message of messages; track message.id) {
+        <mat-card class="message-item" [class.unread]="!message.read" (click)="toggleMessage(message)">
+          <mat-card-content>
+            <div class="message-header">
+              <div class="sender-info">
+                <h3>
+                  {{ message.sujet }}
+                  @if (!message.read) {
+                    <mat-icon class="unread-icon">fiber_manual_record</mat-icon>
+                  }
+                </h3>
+                <p class="sender">De: {{ message.senderName }}</p>
+              </div>
+
+              <div class="message-meta">
+                <span class="date">{{ message.createdAt | timeAgo }}</span>
+                <button mat-icon-button color="warn" (click)="deleteMessage(message.id, $event)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            @if (message.announcementTitre) {
+              <p class="announcement-ref">
+                <mat-icon>home</mat-icon>
+                Concernant: {{ message.announcementTitre }}
+              </p>
+            }
+
+            @if (expandedMessageId === message.id) {
+              <mat-divider></mat-divider>
+              <div class="message-body">
+                <p>{{ message.texte }}</p>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  } @else {
+    <div class="no-messages">
+      <mat-icon>mail_outline</mat-icon>
+      <h2>Aucun message</h2>
+      <p>Vous n'avez pas encore reçu de messages</p>
+    </div>
+  }
+</div>

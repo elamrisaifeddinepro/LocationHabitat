@@ -1,0 +1,56 @@
+<div class="send-message-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>send</mat-icon>
+        Envoyer un message
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (error) {
+        <div class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      <form (submit)="onSubmit($event)">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Objet</mat-label>
+          <input matInput placeholder="Objet du message" [field]="messageForm.objet">
+          <app-form-errors [field]="messageForm.objet" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Message</mat-label>
+          <textarea
+            matInput
+            placeholder="Écrivez votre message ici..."
+            rows="8"
+            [field]="messageForm.contenu"
+          ></textarea>
+          <app-form-errors [field]="messageForm.contenu" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-button type="button" (click)="cancel()" [disabled]="loading">
+            Annuler
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="messageForm().invalid() || loading"
+          >
+            @if (loading) {
+              <span>Envoi en cours...</span>
+            } @else {
+              <span>Envoyer</span>
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
