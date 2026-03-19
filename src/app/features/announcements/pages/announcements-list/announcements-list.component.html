@@ -1,0 +1,76 @@
+<div class="announcements-container">
+  <div class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="header">
+        @if (ownerName) {
+          <h1>Annonces de {{ ownerName }}</h1>
+          <p class="subtitle">Découvrez tous les logements proposés par ce propriétaire</p>
+        } @else {
+          <h1>Trouvez votre logement idéal, en quelques clics.</h1>
+          <p class="subtitle">Location simple, rapide et sécurisée, partout dans votre ville.</p>
+        }
+      </div>
+
+      <div class="filters">
+        <div class="search-wrapper">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="search-input"
+            [formControl]="searchControl"
+            placeholder="Rechercher par titre, description ou localisation..."
+          >
+          @if (searchControl.value) {
+            <button class="clear-search-btn" (click)="searchControl.setValue('')" type="button">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+
+        <div class="price-filters">
+          <mat-form-field class="price-field">
+            <mat-label>Prix minimum</mat-label>
+            <input matInput type="number" [formControl]="minPriceControl" placeholder="0">
+            <span matTextSuffix>$ CAD</span>
+          </mat-form-field>
+
+          <mat-form-field class="price-field">
+            <mat-label>Prix maximum</mat-label>
+            <input matInput type="number" [formControl]="maxPriceControl" placeholder="3000">
+            <span matTextSuffix>$ CAD</span>
+          </mat-form-field>
+
+          <button mat-raised-button (click)="clearFilters()">
+            <mat-icon>clear</mat-icon>
+            Effacer les filtres
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (ownerName) {
+    <div class="owner-filter-bar">
+      <button mat-button routerLink="/announcements" class="back-to-all">
+        <mat-icon>arrow_back</mat-icon>
+        Voir toutes les annonces
+      </button>
+    </div>
+  }
+
+  @if (announcements$ | async; as announcements) {
+    @if (announcements.length > 0) {
+      <div class="announcements-grid">
+        @for (announcement of announcements; track announcement.id) {
+          <app-announcement-card [announcement]="announcement"></app-announcement-card>
+        }
+      </div>
+    } @else {
+      <div class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <p>Aucune annonce ne correspond à vos critères</p>
+      </div>
+    }
+  }
+</div>

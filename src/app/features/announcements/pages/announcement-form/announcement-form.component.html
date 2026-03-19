@@ -1,0 +1,68 @@
+<div class="form-container">
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>{{ isEditMode ? "Modifier l'annonce" : "Nouvelle annonce" }}</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form (submit)="onSubmit($event)">
+        <mat-form-field class="full-width">
+          <mat-label>Titre</mat-label>
+          <input matInput [field]="announcementForm.titre">
+          <app-form-errors [field]="announcementForm.titre" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Description courte</mat-label>
+          <input matInput [field]="announcementForm.descriptionCourte">
+          <app-form-errors [field]="announcementForm.descriptionCourte" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Description longue</mat-label>
+          <textarea matInput rows="5" [field]="announcementForm.descriptionLongue"></textarea>
+          <app-form-errors [field]="announcementForm.descriptionLongue" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Mensualité ($)</mat-label>
+          <input matInput type="number" [field]="announcementForm.mensualite">
+          <app-form-errors [field]="announcementForm.mensualite" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Date de disponibilité</mat-label>
+          <input matInput [matDatepicker]="picker" [field]="announcementForm.dateDisponibilite">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+          <app-form-errors [field]="announcementForm.dateDisponibilite" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Photos (URLs séparées par virgules)</mat-label>
+          <textarea matInput rows="2" [field]="announcementForm.photos"></textarea>
+          <app-form-errors [field]="announcementForm.photos" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Adresse de localisation</mat-label>
+          <textarea
+            matInput
+            rows="2"
+            [field]="announcementForm.adresseLocalisation"
+            (input)="onAddressInput($any($event.target).value)">
+          </textarea>
+          <mat-hint *ngIf="geocodeWarning()" style="color:#b45309">{{ geocodeWarning() }}</mat-hint>
+          <app-form-errors [field]="announcementForm.adresseLocalisation" [submitted]="submitted"></app-form-errors>
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="cancel()">Annuler</button>
+          <button mat-raised-button color="primary" type="submit">
+            {{ isEditMode ? "Enregistrer" : "Publier" }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

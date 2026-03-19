@@ -1,0 +1,165 @@
+<div class="detail-container">
+  <button mat-button class="back-button" (click)="goBack()">
+    <mat-icon>arrow_back</mat-icon>
+    Retour aux annonces
+  </button>
+
+  @if (announcement) {
+    <mat-card class="detail-card">
+      <div class="photos-carousel">
+        @if (announcement.photos.length > 0) {
+          <div class="carousel-container">
+            <div class="carousel-image">
+              <img [src]="announcement.photos[currentPhotoIndex]" [alt]="announcement.titre">
+            </div>
+
+            @if (announcement.photos.length > 1) {
+              <button mat-icon-button class="carousel-nav-btn carousel-prev" (click)="previousPhoto()">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+
+              <button mat-icon-button class="carousel-nav-btn carousel-next" (click)="nextPhoto()">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+
+              <div class="carousel-counter">
+                {{ currentPhotoIndex + 1 }} / {{ announcement.photos.length }}
+              </div>
+
+              <div class="carousel-dots">
+                @for (photo of announcement.photos; track $index) {
+                  <button
+                    class="dot"
+                    [class.active]="$index === currentPhotoIndex"
+                    (click)="goToPhoto($index)">
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <mat-card-content>
+        <div class="header-section">
+          <div>
+            <h1>{{ announcement.titre }}</h1>
+            <button mat-stroked-button class="favorite-action" (click)="toggleFavorite()">
+              <mat-icon class="favorite-action-icon">{{ isFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+              <span class="favorite-action-label"></span>
+            </button>
+          </div>
+          <div class="price-badge">
+            {{ announcement.mensualite | price }}/mois
+          </div>
+        </div>
+
+        <div class="info-row">
+          <mat-icon>location_on</mat-icon>
+          <span>{{ announcement.adresseLocalisation }}</span>
+        </div>
+
+        <div class="map-section">
+          <app-map
+            [address]="announcement.adresseLocalisation"
+            [lat]="announcement.latitude ?? null"
+            [lng]="announcement.longitude ?? null">
+          </app-map>
+        </div>
+
+        <div class="info-row">
+          <mat-icon>calendar_today</mat-icon>
+          <span>Disponible à partir du {{ announcement.dateDisponibilite | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <div class="info-row">
+          <mat-icon>visibility</mat-icon>
+          <span>{{ announcement.vues }} consultations</span>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="description-section">
+          <h2>Description courte</h2>
+          <p>{{ announcement.descriptionCourte }}</p>
+
+          <h2>Description détaillée</h2>
+          <p class="long-description">{{ announcement.descriptionLongue }}</p>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="owner-section">
+          <h2>Propriétaire</h2>
+          <div class="owner-info">
+            <p>
+              <strong>Nom:</strong>
+              <a class="owner-link" (click)="viewOwnerAnnouncements()">
+                {{ announcement.ownerName }}
+              </a>
+            </p>
+            @if (isAuthenticated) {
+              <p><strong>Email:</strong> {{ announcement.ownerEmail }}</p>
+              <p><strong>Téléphone:</strong> {{ announcement.ownerPhone }}</p>
+            } @else {
+              <p class="login-message">
+                <mat-icon>lock</mat-icon>
+                Connectez-vous pour voir les coordonnées
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (isAuthenticated && !isOwner) {
+          <div class="contact-section">
+            <button mat-raised-button color="primary" (click)="toggleContactForm()">
+              <mat-icon>mail</mat-icon>
+              {{ showContactForm ? 'Annuler' : 'Contacter le propriétaire' }}
+            </button>
+
+            @if (showContactForm) {
+              <mat-card class="contact-form-card">
+                <h3>Envoyer un message</h3>
+                <form (submit)="sendMessage($event)">
+                  <mat-form-field class="full-width">
+                    <mat-label>Sujet</mat-label>
+                    <input matInput [field]="contactForm.sujet">
+                    <app-form-errors [field]="contactForm.sujet" [submitted]="submitted"></app-form-errors>
+                  </mat-form-field>
+
+                  <mat-form-field class="full-width">
+                    <mat-label>Message</mat-label>
+                    <textarea matInput rows="5" [field]="contactForm.texte"></textarea>
+                    <app-form-errors [field]="contactForm.texte" [submitted]="submitted"></app-form-errors>
+                  </mat-form-field>
+
+                  <div class="form-actions">
+                    <button mat-button type="button" (click)="toggleContactForm()">Annuler</button>
+                    <button mat-raised-button color="primary" type="submit" [disabled]="contactForm().invalid() || contactForm().submitting()">
+                      Envoyer
+                    </button>
+                  </div>
+                </form>
+              </mat-card>
+            }
+          </div>
+        } @else if (!isAuthenticated) {
+          <div class="login-prompt">
+            <p>Vous devez être connecté pour contacter le propriétaire</p>
+            <button mat-raised-button color="primary" routerLink="/auth/login">
+              Se connecter
+            </button>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <div class="not-found">
+      <mat-icon>error_outline</mat-icon>
+      <p>Annonce non trouvée</p>
+      <button mat-raised-button color="primary" (click)="goBack()">
+        Retour aux annonces
+      </button>
+    </div>
+  }
+</div>

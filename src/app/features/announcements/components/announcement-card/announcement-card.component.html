@@ -1,0 +1,34 @@
+<div class="announcement-card" [routerLink]="['/announcements', announcement.id]">
+  <div class="card-image-container">
+    <img [src]="announcement.photos[0]" [alt]="announcement.titre" class="card-image">
+    @if (!announcement.actif) {
+      <div class="status-badge inactive">Inactif</div>
+    }
+
+    <button class="favorite-btn" mat-icon-button (click)="toggleFavorite($event)" [attr.aria-label]="isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'">
+      <mat-icon>{{ isFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+    </button>
+  </div>
+
+  <div class="card-content">
+    <div class="card-location">
+      {{ announcement.adresseLocalisation.split(',')[0] }}
+    </div>
+
+    <h3 class="card-title">{{ announcement.titre }}</h3>
+
+    <p class="card-description">{{ announcement.descriptionCourte }}</p>
+
+    <div class="card-footer">
+      <div class="card-price">
+        <span class="price-amount">{{ announcement.mensualite | price }}</span>
+        <span class="price-period">/ mois</span>
+      </div>
+
+      <div class="card-views">
+        <mat-icon>visibility</mat-icon>
+        <span>{{ announcement.vues }}</span>
+      </div>
+    </div>
+  </div>
+</div>

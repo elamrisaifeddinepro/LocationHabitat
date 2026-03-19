@@ -1,0 +1,38 @@
+<section class="favorites-page">
+  <div class="favorites-header">
+    <div>
+      <h1>Mes annonces enregistrées</h1>
+      <p>Retrouvez ici les logements que vous avez ajoutés à votre liste de favoris.</p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button routerLink="/announcements">
+        <mat-icon>search</mat-icon>
+        Explorer les annonces
+      </button>
+      <button mat-button color="warn" (click)="clearFavorites()">
+        <mat-icon>delete_sweep</mat-icon>
+        Vider la liste
+      </button>
+    </div>
+  </div>
+
+  @if (favorites$ | async; as favorites) {
+    @if (favorites.length > 0) {
+      <div class="favorites-grid">
+        @for (announcement of favorites; track announcement.id) {
+          <app-announcement-card [announcement]="announcement"></app-announcement-card>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <mat-icon>favorite_border</mat-icon>
+        <h2>Aucune annonce enregistrée</h2>
+        <p>Ajoutez des logements à vos favoris pour les comparer et les retrouver rapidement.</p>
+        <button mat-raised-button color="primary" routerLink="/announcements">
+          Voir les annonces
+        </button>
+      </div>
+    }
+  }
+</section>

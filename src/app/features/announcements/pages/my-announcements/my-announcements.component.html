@@ -1,0 +1,85 @@
+<div class="my-announcements-container">
+  <div class="header">
+    <h1>Mes annonces</h1>
+    <button mat-raised-button color="primary" class="create-announcement-btn" routerLink="/announcements/new">
+      <mat-icon>add</mat-icon>
+      <span>Nouvelle annonce</span>
+    </button>
+  </div>
+
+  @if (announcements.length > 0) {
+    <div class="announcements-list">
+      @for (announcement of announcements; track announcement.id) {
+        <mat-card class="announcement-item">
+          <mat-card-content>
+            <div class="announcement-header">
+              <div class="title-section">
+                <h2>{{ announcement.titre }}</h2>
+                <p class="location">{{ announcement.adresseLocalisation }}</p>
+              </div>
+              <mat-chip-set>
+                <mat-chip [highlighted]="announcement.actif">
+                  {{ announcement.actif | status }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+
+            <div class="announcement-info">
+              <div class="info-item">
+                <span class="label">Mensualité</span>
+                <span class="value">{{ announcement.mensualite | price }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">Consultations</span>
+                <span class="value">{{ announcement.vues }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">Disponible le</span>
+                <span class="value">{{ announcement.dateDisponibilite | date:'dd/MM/yyyy' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">Créée le</span>
+                <span class="value">{{ announcement.createdAt | timeAgo }}</span>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button mat-button [routerLink]="['/announcements', announcement.id]">
+                <mat-icon>visibility</mat-icon>
+                Voir
+              </button>
+
+              <button mat-button [routerLink]="['/announcements/edit', announcement.id]">
+                <mat-icon>edit</mat-icon>
+                Modifier
+              </button>
+
+              <button mat-button [color]="announcement.actif ? 'warn' : 'primary'" (click)="toggleActive(announcement)">
+                <mat-icon>{{ announcement.actif ? 'visibility_off' : 'visibility' }}</mat-icon>
+                {{ announcement.actif ? 'Désactiver' : 'Activer' }}
+              </button>
+
+              <button mat-button color="warn" (click)="deleteAnnouncement(announcement.id)">
+                <mat-icon>delete</mat-icon>
+                Supprimer
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  } @else {
+    <div class="no-announcements">
+      <mat-icon>inbox</mat-icon>
+      <h2>Aucune annonce</h2>
+      <p>Vous n'avez pas encore créé d'annonce</p>
+      <button mat-raised-button color="primary" class="create-announcement-btn empty-state-btn" routerLink="/announcements/new">
+        <mat-icon>add</mat-icon>
+        <span>Créer ma première annonce</span>
+      </button>
+    </div>
+  }
+</div>

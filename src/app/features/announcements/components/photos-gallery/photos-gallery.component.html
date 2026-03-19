@@ -1,0 +1,42 @@
+<div class="gallery-container">
+  @if (photos.length > 0) {
+    <div class="gallery-grid">
+      @for (photo of displayedPhotos; track $index) {
+        <div class="gallery-item" (click)="openLightbox($index)">
+          <img [src]="photo" [alt]="'Photo ' + ($index + 1)">
+          @if ($index === maxDisplay - 1 && remainingCount > 0) {
+            <div class="overlay">
+              <span class="remaining-count">+{{ remainingCount }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="no-photos">
+      <mat-icon>photo_library</mat-icon>
+      <p>Aucune photo disponible</p>
+    </div>
+  }
+</div>
+
+@if (showLightbox) {
+  <div class="lightbox-overlay" (click)="closeLightbox()">
+    <button mat-icon-button class="close-btn" (click)="closeLightbox()">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <button mat-icon-button class="nav-btn prev-btn" (click)="previousPhoto(); $event.stopPropagation()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <img [src]="photos[currentIndex]" [alt]="'Photo ' + (currentIndex + 1)">
+      <div class="lightbox-counter">{{ currentIndex + 1 }} / {{ photos.length }}</div>
+    </div>
+
+    <button mat-icon-button class="nav-btn next-btn" (click)="nextPhoto(); $event.stopPropagation()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+}
