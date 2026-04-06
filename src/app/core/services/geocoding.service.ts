@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, catchError, shareReplay } from 'rxjs/operators';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 import { SILENT_HTTP_ERROR } from '../interceptors/http-error.interceptor';
 
 export interface GeocodingResult {
@@ -26,34 +26,37 @@ export class GeocodingService {
   constructor(private http: HttpClient) {}
 
   geocodeAddress(address: string): Observable<GeocodingResult | null> {
-    const key = this.normalize(address);
+    const key = this.normalizeAddress(address);
     if (!key) return of(null);
 
     const cached = this.cacheBasic.get(key);
     if (cached) return cached;
 
-    const params: any = {
-      q: key,
-      format: 'jsonv2',
-      limit: '10',
-      addressdetails: '1',
-      dedupe: '1'
-    };
+    const params = new HttpParams()
+      .set('q', key)
+      .set('format', 'jsonv2')
+      .set('limit', '10')
+      .set('addressdetails', '1')
+      .set('dedupe', '1')
+      .set('countrycodes', 'ca');
+
+    const headers = new HttpHeaders({
+      'Accept-Language': 'fr-CA,fr;q=0.9,en;q=0.8'
+    });
 
     const ctx = new HttpContext().set(SILENT_HTTP_ERROR, true);
 
-    const request$ = this.http.get<any[]>(this.nominatimUrl, { params, context: ctx }).pipe(
+    const request$ = this.http.get<any[]>(this.nominatimUrl, { params, headers, context: ctx }).pipe(
       map(results => {
         if (!results || results.length === 0) return null;
+
         const best = this.pickBestResult(results);
         const lat = parseFloat(best.lat);
         const lng = parseFloat(best.lon);
+
         return (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : null;
       }),
-      catchError((error) => {
-        console.error('Geocoding error:', error);
-        return of(null);
-      }),
+      catchError(() => of(null)),
       shareReplay({ bufferSize: 1, refCount: false })
     );
 
@@ -62,30 +65,39 @@ export class GeocodingService {
   }
 
   geocodeAddressDetailed(address: string): Observable<GeocodingResponse> {
-    const key = this.normalize(address);
+    const key = this.normalizeAddress(address);
     if (!key) return of({ result: null, quality: 'vague' });
 
     const cached = this.cacheDetailed.get(key);
     if (cached) return cached;
 
-    const params: any = {
-      q: key,
-      format: 'jsonv2',
-      limit: '10',
-      addressdetails: '1',
-      dedupe: '1'
-    };
+    const params = new HttpParams()
+      .set('q', key)
+      .set('format', 'jsonv2')
+      .set('limit', '10')
+      .set('addressdetails', '1')
+      .set('dedupe', '1')
+      .set('countrycodes', 'ca');
+
+    const headers = new HttpHeaders({
+      'Accept-Language': 'fr-CA,fr;q=0.9,en;q=0.8'
+    });
 
     const ctx = new HttpContext().set(SILENT_HTTP_ERROR, true);
 
-    const request$ = this.http.get<any[]>(this.nominatimUrl, { params, context: ctx }).pipe(
+    const request$ = this.http.get<any[]>(this.nominatimUrl, { params, headers, context: ctx }).pipe(
       map(results => {
-        if (!results || results.length === 0) return { result: null, quality: 'vague' as const };
+        if (!results || results.length === 0) {
+          return { result: null, quality: 'vague' as const };
+        }
 
         const best = this.pickBestResult(results);
         const lat = parseFloat(best.lat);
         const lng = parseFloat(best.lon);
-        if (isNaN(lat) || isNaN(lng)) return { result: null, quality: 'vague' as const };
+
+        if (isNaN(lat) || isNaN(lng)) {
+          return { result: null, quality: 'vague' as const };
+        }
 
         const bboxScore = this.boundingBoxPrecisionScore(best.boundingbox);
         const type = String(best.type ?? '').toLowerCase();
@@ -102,10 +114,7 @@ export class GeocodingService {
           displayName: best.display_name
         };
       }),
-      catchError((error) => {
-        console.error('Geocoding error:', error);
-        return of({ result: null, quality: 'vague' as const });
-      }),
+      catchError(() => of({ result: null, quality: 'vague' as const })),
       shareReplay({ bufferSize: 1, refCount: false })
     );
 
@@ -113,8 +122,39 @@ export class GeocodingService {
     return request$;
   }
 
-  private normalize(address: string): string {
-    return (address ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  private normalizeAddress(address: string): string {
+    let value = String(address ?? '').trim();
+    if (!value) return '';
+
+    value = value.replace(/\bVille non précisée\b/gi, '');
+    value = value.replace(/\s+/g, ' ').trim();
+    value = value.replace(/\s*,\s*,+/g, ', ');
+    value = value.replace(/\bqc\b/gi, 'Québec');
+    value = value.replace(/\bquebec\b/gi, 'Québec');
+    value = value.replace(/\btrois[-\s]?rivieres\b/gi, 'Trois-Rivières');
+    value = value.replace(/\bmontreal\b/gi, 'Montréal');
+    value = value.replace(/\b([A-Z]\d[A-Z])\s?(\d[A-Z]\d)\b/i, '$1 $2');
+
+    const segments = value
+      .split(',')
+      .map(part => part.trim())
+      .filter(Boolean);
+
+    const deduped: string[] = [];
+    for (const segment of segments) {
+      const normalizedSegment = segment.toLowerCase();
+      if (!deduped.some(s => s.toLowerCase() === normalizedSegment)) {
+        deduped.push(segment);
+      }
+    }
+
+    value = deduped.join(', ');
+
+    if (!/canada/i.test(value)) {
+      value = `${value}, Canada`;
+    }
+
+    return value;
   }
 
   private pickBestResult(results: any[]): any {

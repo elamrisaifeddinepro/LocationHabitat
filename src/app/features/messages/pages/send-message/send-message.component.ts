@@ -32,9 +32,9 @@ import { SEND_MESSAGE_SCHEMA, type SendMessageModel } from '../../../../shared/f
 export class SendMessageComponent implements OnInit {
   private readonly model = signal<SendMessageModel>({ objet: '', contenu: '' });
   readonly messageForm = form(this.model, SEND_MESSAGE_SCHEMA);
+
   submitted = false;
   error: string | null = null;
-  recipientId: string | null = null;
   announcementId: string | null = null;
 
   constructor(
@@ -42,15 +42,13 @@ export class SendMessageComponent implements OnInit {
     private router: Router,
     private messageService: MessageService,
     private authService: AuthService
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.recipientId = this.route.snapshot.queryParamMap.get('recipientId');
     this.announcementId = this.route.snapshot.queryParamMap.get('announcementId');
 
-    if (!this.recipientId) {
-      this.error = 'Destinataire non spécifié';
+    if (!this.announcementId) {
+      this.error = 'Annonce non spécifiée';
     }
   }
 
@@ -62,7 +60,10 @@ export class SendMessageComponent implements OnInit {
     event?.preventDefault();
 
     this.submitted = true;
-    if (this.messageForm().invalid() || !this.recipientId) return;
+
+    if (this.messageForm().invalid() || !this.announcementId) {
+      return;
+    }
 
     this.error = null;
 
@@ -75,9 +76,9 @@ export class SendMessageComponent implements OnInit {
     const messageData = {
       senderId: currentUser.id,
       senderName: `${currentUser.prenom} ${currentUser.nom}`,
-      receiverId: this.recipientId,
+      receiverId: '',
       receiverName: '',
-      announcementId: this.announcementId || undefined,
+      announcementId: this.announcementId,
       announcementTitre: '',
       sujet: this.messageForm().value().objet,
       texte: this.messageForm().value().contenu
@@ -86,13 +87,14 @@ export class SendMessageComponent implements OnInit {
     await submit(this.messageForm, async () => {
       try {
         await firstValueFrom(this.messageService.send(messageData));
-        this.router.navigate(['/messages']);
+        await this.router.navigate(['/messages']);
         return;
-      } catch {
-        this.error = 'Erreur lors de l\'envoi du message';
+      } catch (err: any) {
+        this.error = err?.message || 'Erreur lors de l’envoi du message';
+
         return customError({
           kind: 'server',
-          message: 'Erreur lors de l\'envoi du message',
+          message: this.error ?? undefined,
           field: this.messageForm.contenu
         });
       }

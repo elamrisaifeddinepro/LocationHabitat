@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-subject-to-messages
+      author: chatgpt
+      changes:
+        - addColumn:
+            tableName: messages
+            columns:
+              - column:
+                  name: subject
+                  type: VARCHAR(255)
+                  defaultValue: "Sans sujet"
+                  constraints:
+                    nullable: false

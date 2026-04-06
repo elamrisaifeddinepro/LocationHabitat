@@ -5,6 +5,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { provideSignalFormsConfig } from '@angular/forms/signals';
 import { routes } from './app.routes';
+import { authTokenInterceptor } from './core/interceptors/auth-token.interceptor';
 import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -26,6 +27,11 @@ export const appConfig: ApplicationConfig = {
         'ng-enabled': (s) => !s.disabled()
       }
     }),
-    provideHttpClient(withInterceptors([httpErrorInterceptor]))
+    provideHttpClient(
+      withInterceptors([
+        authTokenInterceptor,
+        httpErrorInterceptor
+      ])
+    )
   ]
 };

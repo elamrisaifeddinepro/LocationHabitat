@@ -1,1 +1,74 @@
-[]
+[
+  {
+    "id": "1",
+    "titre": "Appartement 5 1/2 centre-ville Montréal",
+    "descriptionCourte": "Bel appartement lumineux avec balcon",
+    "descriptionLongue": "Magnifique appartement de 5 1/2 situé en plein centre-ville de Montréal. Proche de toutes commodités (métro, commerces, écoles). Comprend un grand salon, 2 chambres, cuisine équipée, salle de bain complète et balcon avec vue dégagée. Chauffage et eau chaude inclus.",
+    "mensualite": 1850,
+    "dateDisponibilite": "2024-03-01T00:00:00.000Z",
+    "photos": [
+      "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
+      "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg",
+      "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg",
+      "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+      "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+      "https://images.pexels.com/photos/2343468/pexels-photo-2343468.jpeg",
+      "https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg",
+      "https://images.pexels.com/photos/1080696/pexels-photo-1080696.jpeg"
+    ],
+    "adresseLocalisation": "1250 Rue Sainte-Catherine Est, Montréal, QC H2L 2H5",
+    "actif": true,
+    "ownerId": "u1",
+    "ownerName": "Marie Tremblay",
+    "ownerEmail": "marie.tremblay@example.com",
+    "ownerPhone": "5148234567",
+    "vues": 45,
+    "createdAt": "2024-01-15T00:00:00.000Z",
+    "updatedAt": "2024-01-15T00:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "titre": "Studio meublé Vieux-Québec",
+    "descriptionCourte": "Studio meublé et équipé",
+    "descriptionLongue": "Charmant studio entièrement meublé et équipé, idéal pour étudiant ou jeune professionnel. Situé dans le Vieux-Québec, à proximité de l'Université Laval. Kitchenette équipée, salle de bain complète. Électricité incluse. Accès internet haute vitesse.",
+    "mensualite": 1250,
+    "dateDisponibilite": "2024-02-15T00:00:00.000Z",
+    "photos": [
+      "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg",
+      "https://images.pexels.com/photos/439227/pexels-photo-439227.jpeg",
+      "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg",
+      "https://images.pexels.com/photos/1909791/pexels-photo-1909791.jpeg"
+    ],
+    "adresseLocalisation": "85 Rue Saint-Jean, Québec, QC G1R 1N8",
+    "actif": true,
+    "ownerId": "u2",
+    "ownerName": "Jean Gagnon",
+    "ownerEmail": "jean.gagnon@example.com",
+    "ownerPhone": "5140001111",
+    "vues": 32,
+    "createdAt": "2024-01-20T00:00:00.000Z",
+    "updatedAt": "2024-01-20T00:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "titre": "Condo 3 1/2 moderne à Laval",
+    "descriptionCourte": "Condo récent, stationnement inclus",
+    "descriptionLongue": "Condo moderne 3 1/2 à Laval, près des transports et commerces. Cuisine ouverte, électroménagers inclus, balcon, stationnement extérieur. Idéal pour jeune couple ou professionnel.",
+    "mensualite": 1450,
+    "dateDisponibilite": "2024-04-01T00:00:00.000Z",
+    "photos": [
+      "https://images.pexels.com/photos/439227/pexels-photo-439227.jpeg",
+      "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg",
+      "https://images.pexels.com/photos/1909791/pexels-photo-1909791.jpeg"
+    ],
+    "adresseLocalisation": "2200 Boulevard du Souvenir, Laval, QC H7N 0A1",
+    "actif": true,
+    "ownerId": "u3",
+    "ownerName": "Sarah Dupont",
+    "ownerEmail": "sarah.dupont@example.com",
+    "ownerPhone": "5142223333",
+    "vues": 18,
+    "createdAt": "2024-01-25T00:00:00.000Z",
+    "updatedAt": "2024-01-25T00:00:00.000Z"
+  }
+]

@@ -1,40 +1,155 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, defer, map, of, throwError, delay, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  map,
+  of,
+  take,
+  tap,
+  throwError
+} from 'rxjs';
 import { Announcement } from '../../models/announcement.model';
 import { StorageService } from './storage.service';
+import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
+
+type AnnouncementSource = Omit<Announcement, 'dateDisponibilite' | 'createdAt' | 'updatedAt'> & {
+  dateDisponibilite: string | Date;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+export interface BusinessAnnouncementResponse {
+  id: number;
+  title: string;
+  description: string;
+  shortDescription: string;
+  longDescription: string;
+  availableDate: string | null;
+  photos: string[];
+  city: string;
+  address: string;
+  monthlyRent: number;
+  numberOfRooms: number;
+  area: number;
+  active: boolean;
+  viewCount: number;
+  ownerAuthUserId: string;
+  ownerEmail: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAnnouncementPayload {
+  title: string;
+  shortDescription: string;
+  longDescription: string;
+  availableDate?: string | null;
+  photos?: string[];
+  city: string;
+  address: string;
+  monthlyRent: number;
+  numberOfRooms: number;
+  area: number;
+}
+
+export interface UpdateAnnouncementPayload {
+  title?: string;
+  shortDescription?: string;
+  longDescription?: string;
+  availableDate?: string | null;
+  photos?: string[];
+  city?: string;
+  address?: string;
+  monthlyRent?: number;
+  numberOfRooms?: number;
+  area?: number;
+}
+
+export interface UploadImageResponse {
+  fileName: string;
+  url: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AnnouncementService {
   private readonly ANNOUNCEMENTS_KEY = 'announcements';
-  private announcementsSubject: BehaviorSubject<Announcement[]>;
-  public announcements$: Observable<Announcement[]>;
+  private announcementsSubject = new BehaviorSubject<Announcement[]>([]);
+  public announcements$: Observable<Announcement[]> = this.announcementsSubject.asObservable();
 
-  constructor(private storageService: StorageService) {
-    const announcements = this.storageService.getItem<Announcement[]>(this.ANNOUNCEMENTS_KEY) || this.getInitialAnnouncements();
-    // Migration: aligner les annonces existantes avec les ids utilisateurs mock (u1/u2/u3)
+  constructor(
+    private storageService: StorageService,
+    private http: HttpClient,
+    private authService: AuthService
+  ) {
+    this.initializeAnnouncements();
+  }
+
+  private initializeAnnouncements(): void {
+    if (environment.authProvider === 'backend') {
+      this.loadActiveAnnouncements().pipe(take(1)).subscribe({
+        next: (announcements) => this.persist(announcements),
+        error: () => this.persist([])
+      });
+      return;
+    }
+
+    const stored = this.storageService.getItem<AnnouncementSource[]>(this.ANNOUNCEMENTS_KEY);
+
+    if (stored && stored.length > 0) {
+      this.persist(this.migrateAnnouncements(stored));
+      return;
+    }
+
+    this.http.get<AnnouncementSource[]>('assets/mock/announcements.json')
+      .pipe(
+        take(1),
+        map((announcements) => this.migrateAnnouncements(announcements ?? []))
+      )
+      .subscribe({
+        next: (announcements) => this.persist(announcements),
+        error: () => this.persist([])
+      });
+  }
+
+  private normalizeAnnouncement(announcement: AnnouncementSource): Announcement {
+    return {
+      ...announcement,
+      dateDisponibilite: new Date(announcement.dateDisponibilite),
+      createdAt: new Date(announcement.createdAt),
+      updatedAt: new Date(announcement.updatedAt)
+    };
+  }
+
+  private migrateAnnouncements(announcements: AnnouncementSource[]): Announcement[] {
     const emailToUserId: Record<string, string> = {
       'marie.tremblay@example.com': 'u1',
       'jean.gagnon@example.com': 'u2',
       'sarah.dupont@example.com': 'u3'
     };
 
-    const migrated = announcements.map(a => {
-      const email = (a.ownerEmail || '').trim().toLowerCase();
+    return announcements.map((raw) => {
+      const announcement = this.normalizeAnnouncement(raw);
+      const email = (announcement.ownerEmail || '').trim().toLowerCase();
+
       const mappedByEmail = emailToUserId[email];
       const mappedByLegacyId =
-        a.ownerId === 'owner1' ? 'u1' :
-        a.ownerId === 'owner2' ? 'u2' :
-        a.ownerId;
+        announcement.ownerId === 'owner1' ? 'u1' :
+        announcement.ownerId === 'owner2' ? 'u2' :
+        announcement.ownerId === 'owner3' ? 'u3' :
+        announcement.ownerId;
 
       const finalOwnerId = mappedByEmail ?? mappedByLegacyId;
 
-      return { ...a, ownerId: finalOwnerId };
+      return {
+        ...announcement,
+        ownerId: finalOwnerId
+      };
     });
-    this.storageService.setItem(this.ANNOUNCEMENTS_KEY, migrated);
-    this.announcementsSubject = new BehaviorSubject<Announcement[]>(migrated);
-    this.announcements$ = this.announcementsSubject.asObservable();
   }
 
   private persist(next: Announcement[]): void {
@@ -42,197 +157,295 @@ export class AnnouncementService {
     this.announcementsSubject.next(next);
   }
 
-  private getInitialAnnouncements(): Announcement[] {
-    return [
-      {
-        id: '1',
-        titre: 'Appartement 5 1/2 centre-ville Montréal',
-        descriptionCourte: 'Bel appartement lumineux avec balcon',
-        descriptionLongue: 'Magnifique appartement de 5 1/2 situé en plein centre-ville de Montréal. Proche de toutes commodités (métro, commerces, écoles). Comprend un grand salon, 2 chambres, cuisine équipée, salle de bain complète et balcon avec vue dégagée. Chauffage et eau chaude inclus.',
-        mensualite: 1850,
-        dateDisponibilite: new Date('2024-03-01'),
-        photos: [
-          'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg',
-          'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg',
-          'https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg',
-          'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-          'https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg',
-          'https://images.pexels.com/photos/2343468/pexels-photo-2343468.jpeg',
-          'https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg',
-          'https://images.pexels.com/photos/1080696/pexels-photo-1080696.jpeg'
-        ],
-        adresseLocalisation: '1250 Rue Sainte-Catherine Est, Montréal, QC H2L 2H5',
-        actif: true,
-        ownerId: 'u1',
-        ownerName: 'Marie Tremblay',
-        ownerEmail: 'marie.tremblay@example.com',
-        ownerPhone: '5148234567',
-        vues: 45,
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15')
-      },
-      {
-        id: '2',
-        titre: 'Studio meublé Vieux-Québec',
-        descriptionCourte: 'Studio meublé et équipé',
-        descriptionLongue: 'Charmant studio entièrement meublé et équipé, idéal pour étudiant ou jeune professionnel. Situé dans le Vieux-Québec, à proximité de l\'Université Laval. Kitchenette équipée, salle de bain complète. Électricité incluse. Accès internet haute vitesse.',
-        mensualite: 1250,
-        dateDisponibilite: new Date('2024-02-15'),
-        photos: [
-          'https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg',
-          'https://images.pexels.com/photos/439227/pexels-photo-439227.jpeg',
-          'https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg',
-          'https://images.pexels.com/photos/1909791/pexels-photo-1909791.jpeg'
-        ],
-        adresseLocalisation: '85 Rue Saint-Jean, Québec, QC G1R 1N8',
-        actif: true,
-        ownerId: 'u2',
-        ownerName: 'Jean Gagnon',
-        ownerEmail: 'jean.gagnon@example.com',
-        ownerPhone: '5140001111',
-        vues: 32,
-        createdAt: new Date('2024-01-20'),
-        updatedAt: new Date('2024-01-20')
-      }
+  private buildDisplayAddress(address: string, city: string): string {
+    const cleanAddress = String(address ?? '').trim();
+    const cleanCity = String(city ?? '').trim();
 
-      ,
-      {
-        id: '3',
-        titre: 'Condo 3 1/2 moderne à Laval',
-        descriptionCourte: 'Condo récent, stationnement inclus',
-        descriptionLongue: 'Condo moderne 3 1/2 à Laval, près des transports et commerces. Cuisine ouverte, électroménagers inclus, balcon, stationnement extérieur. Idéal pour jeune couple ou professionnel.',
-        mensualite: 1450,
-        dateDisponibilite: new Date('2024-04-01'),
-        photos: [
-          'https://images.pexels.com/photos/439227/pexels-photo-439227.jpeg',
-          'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg',
-          'https://images.pexels.com/photos/1909791/pexels-photo-1909791.jpeg'
-        ],
-        adresseLocalisation: '2200 Boulevard du Souvenir, Laval, QC H7N 0A1',
-        actif: true,
-        ownerId: 'u3',
-        ownerName: 'Sarah Dupont',
-        ownerEmail: 'sarah.dupont@example.com',
-        ownerPhone: '5142223333',
-        vues: 18,
-        createdAt: new Date('2024-01-25'),
-        updatedAt: new Date('2024-01-25')
-      }
-    ];
+    if (!cleanCity || cleanCity.toLowerCase() === 'ville non précisée') {
+      return cleanAddress;
+    }
+
+    const normalizedAddress = cleanAddress
+      .toLowerCase()
+      .replace(/-/g, ' ')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const normalizedCity = cleanCity
+      .toLowerCase()
+      .replace(/-/g, ' ')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (normalizedAddress.includes(normalizedCity)) {
+      return cleanAddress;
+    }
+
+    return cleanAddress ? `${cleanAddress}, ${cleanCity}` : cleanCity;
+  }
+
+  private toFrontendAnnouncement(item: BusinessAnnouncementResponse): Announcement {
+    const currentUser = this.authService.currentUserValue;
+    const isOwner =
+      !!currentUser &&
+      currentUser.courriel?.trim().toLowerCase() === item.ownerEmail?.trim().toLowerCase();
+
+    const ownerName = isOwner
+      ? `${currentUser!.prenom} ${currentUser!.nom}`.trim()
+      : item.ownerEmail || 'Propriétaire';
+
+    const ownerPhone = isOwner ? currentUser!.telephone : '';
+
+    return {
+      id: String(item.id),
+      titre: item.title,
+      descriptionCourte: item.shortDescription || item.description || '',
+      descriptionLongue: item.longDescription || item.description || '',
+      mensualite: Number(item.monthlyRent),
+      dateDisponibilite: item.availableDate
+        ? new Date(item.availableDate)
+        : new Date(item.createdAt),
+      photos: item.photos ?? [],
+      adresseLocalisation: this.buildDisplayAddress(item.address, item.city),
+      latitude: null,
+      longitude: null,
+      actif: Boolean(item.active),
+      ownerId: item.ownerAuthUserId,
+      ownerName,
+      ownerEmail: item.ownerEmail,
+      ownerPhone,
+      vues: Number(item.viewCount ?? 0),
+      createdAt: new Date(item.createdAt),
+      updatedAt: new Date(item.updatedAt)
+    };
+  }
+
+  private loadActiveAnnouncements(ownerId?: string): Observable<Announcement[]> {
+    const query = ownerId ? `?ownerId=${encodeURIComponent(ownerId)}` : '';
+
+    return this.http.get<BusinessAnnouncementResponse[]>(
+      `${environment.businessApiUrl}/announcements${query}`
+    ).pipe(
+      map((items) => (items ?? []).map((item) => this.toFrontendAnnouncement(item))),
+      catchError((err) => this.handleError(err, 'Erreur lors du chargement des annonces'))
+    );
+  }
+
+  private refreshActiveAnnouncements(): void {
+    if (environment.authProvider !== 'backend') {
+      return;
+    }
+
+    this.loadActiveAnnouncements().pipe(take(1)).subscribe({
+      next: (announcements) => this.persist(announcements),
+      error: () => {}
+    });
   }
 
   getAll(): Observable<Announcement[]> {
+    if (environment.authProvider === 'backend') {
+      return this.loadActiveAnnouncements().pipe(
+        tap((announcements) => this.persist(announcements))
+      );
+    }
+
     return this.announcements$;
   }
 
   getActive(): Observable<Announcement[]> {
+    if (environment.authProvider === 'backend') {
+      return this.loadActiveAnnouncements().pipe(
+        tap((announcements) => this.persist(announcements))
+      );
+    }
+
     return this.announcements$.pipe(
-      map(announcements => announcements.filter(a => a.actif))
+      map((announcements) => announcements.filter((a) => a.actif))
     );
   }
 
   getById(id: string): Observable<Announcement | undefined> {
+    if (environment.authProvider === 'backend') {
+      return this.http.get<BusinessAnnouncementResponse>(
+        `${environment.businessApiUrl}/announcements/${id}`
+      ).pipe(
+        map((item) => this.toFrontendAnnouncement(item)),
+        catchError((err) => this.handleError(err, 'Erreur lors du chargement de l’annonce'))
+      );
+    }
+
     return this.announcements$.pipe(
-      map(announcements => announcements.find(a => a.id === id))
+      map((announcements) => announcements.find((a) => a.id === id))
+    );
+  }
+
+  getOwnedById(id: string): Observable<Announcement | undefined> {
+    if (environment.authProvider === 'backend') {
+      return this.http.get<BusinessAnnouncementResponse>(
+        `${environment.businessApiUrl}/announcements/${id}/owner`
+      ).pipe(
+        map((item) => this.toFrontendAnnouncement(item)),
+        catchError((err) => this.handleError(err, 'Erreur lors du chargement de votre annonce'))
+      );
+    }
+
+    const currentUser = this.authService.currentUserValue;
+    return this.announcements$.pipe(
+      map((announcements) => announcements.find((a) => a.id === id && a.ownerId === currentUser?.id))
     );
   }
 
   getByOwnerId(ownerId: string): Observable<Announcement[]> {
+    if (environment.authProvider === 'backend') {
+      return this.loadActiveAnnouncements(ownerId);
+    }
+
     return this.announcements$.pipe(
-      map(announcements => announcements.filter(a => a.ownerId === ownerId))
+      map((announcements) => announcements.filter((a) => a.ownerId === ownerId && a.actif))
     );
   }
 
-  create(announcement: Omit<Announcement, 'id' | 'vues' | 'createdAt' | 'updatedAt'>): Observable<Announcement> {
-    return defer(() => {
-      const current = this.announcementsSubject.value;
-      const newAnnouncement: Announcement = {
-        ...announcement,
-        id: Date.now().toString(),
-        vues: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      const next = [...current, newAnnouncement];
-      return of(newAnnouncement).pipe(
-        delay(500),
-        tap(() => this.persist(next))
+  getMyAnnouncements(): Observable<Announcement[]> {
+    if (environment.authProvider === 'backend') {
+      return this.http.get<BusinessAnnouncementResponse[]>(
+        `${environment.businessApiUrl}/announcements/my`
+      ).pipe(
+        map((items) => (items ?? []).map((item) => this.toFrontendAnnouncement(item))),
+        catchError((err) => this.handleError(err, 'Erreur lors du chargement de vos annonces'))
       );
-    });
+    }
+
+    const currentUser = this.authService.currentUserValue;
+    if (!currentUser) {
+      return of([]);
+    }
+
+    return this.announcements$.pipe(
+      map((announcements) => announcements.filter((a) => a.ownerId === currentUser.id))
+    );
   }
 
-  update(id: string, announcement: Partial<Announcement>): Observable<Announcement> {
-    return defer(() => {
-      const current = this.announcementsSubject.value;
-      const index = current.findIndex(a => a.id === id);
-      if (index === -1) {
-        return throwError(() => ({ message: 'Annonce non trouvée' }));
-      }
-
-      const updatedAnnouncement: Announcement = {
-        ...current[index],
-        ...announcement,
-        updatedAt: new Date()
-      };
-
-      const next = [...current];
-      next[index] = updatedAnnouncement;
-
-      return of(updatedAnnouncement).pipe(
-        delay(500),
-        tap(() => this.persist(next))
+  create(payload: CreateAnnouncementPayload): Observable<Announcement> {
+    if (environment.authProvider === 'backend') {
+      return this.http.post<BusinessAnnouncementResponse>(
+        `${environment.businessApiUrl}/announcements`,
+        payload
+      ).pipe(
+        map((item) => this.toFrontendAnnouncement(item)),
+        tap(() => this.refreshActiveAnnouncements()),
+        catchError((err) => this.handleError(err, 'Erreur lors de la création de l’annonce'))
       );
+    }
+
+    return throwError(() => ({
+      message: 'Le mode mock pour la création n’est plus utilisé dans cette version.'
+    }));
+  }
+
+  uploadImages(files: File[]): Observable<UploadImageResponse[]> {
+    const formData = new FormData();
+
+    files.forEach((file) => {
+      formData.append('files', file);
     });
+
+    return this.http.post<UploadImageResponse[]>(
+      `${environment.businessApiUrl}/uploads/images`,
+      formData
+    ).pipe(
+      catchError((err) => this.handleError(err, "Erreur lors de l'upload des images"))
+    );
+  }
+
+  update(id: string, payload: UpdateAnnouncementPayload): Observable<Announcement> {
+    if (environment.authProvider === 'backend') {
+      return this.http.put<BusinessAnnouncementResponse>(
+        `${environment.businessApiUrl}/announcements/${id}`,
+        payload
+      ).pipe(
+        map((item) => this.toFrontendAnnouncement(item)),
+        tap(() => this.refreshActiveAnnouncements()),
+        catchError((err) => this.handleError(err, 'Erreur lors de la modification de l’annonce'))
+      );
+    }
+
+    return throwError(() => ({
+      message: 'La modification n’est pas disponible.'
+    }));
   }
 
   toggleActive(id: string): Observable<Announcement> {
-    return defer(() => {
-      const current = this.announcementsSubject.value;
-      const index = current.findIndex(a => a.id === id);
-      if (index === -1) {
-        return throwError(() => ({ message: 'Annonce non trouvée' }));
-      }
-
-      const updatedAnnouncement: Announcement = {
-        ...current[index],
-        actif: !current[index].actif,
-        updatedAt: new Date()
-      };
-
-      const next = [...current];
-      next[index] = updatedAnnouncement;
-
-      return of(updatedAnnouncement).pipe(
-        delay(300),
-        tap(() => this.persist(next))
+    if (environment.authProvider === 'backend') {
+      return this.http.patch<BusinessAnnouncementResponse>(
+        `${environment.businessApiUrl}/announcements/${id}/toggle-active`,
+        {}
+      ).pipe(
+        map((item) => this.toFrontendAnnouncement(item)),
+        tap(() => this.refreshActiveAnnouncements()),
+        catchError((err) => this.handleError(err, 'Erreur lors du changement de statut'))
       );
-    });
+    }
+
+    return throwError(() => ({
+      message: 'Le changement de statut n’est pas disponible.'
+    }));
   }
 
-  incrementViews(id: string): Observable<void> {
-    return defer(() => {
-      const current = this.announcementsSubject.value;
-      const index = current.findIndex(a => a.id === id);
-      if (index === -1) {
-        return of(void 0);
-      }
-      const next = [...current];
-      next[index] = { ...next[index], vues: (next[index].vues ?? 0) + 1 };
-      return of(void 0).pipe(
-        delay(100),
-        tap(() => this.persist(next))
+  incrementViews(id: string): Observable<Announcement> {
+    if (environment.authProvider === 'backend') {
+      return this.http.post<BusinessAnnouncementResponse>(
+        `${environment.businessApiUrl}/announcements/${id}/views`,
+        {}
+      ).pipe(
+        map((item) => this.toFrontendAnnouncement(item)),
+        catchError((err) => this.handleError(err, 'Erreur lors de la mise à jour des vues'))
       );
-    });
+    }
+
+    return this.getById(id).pipe(
+      map((announcement) => {
+        if (!announcement) {
+          throw new Error('Annonce introuvable');
+        }
+
+        const updatedAnnouncement: Announcement = {
+          ...announcement,
+          vues: Number(announcement.vues ?? 0) + 1,
+          updatedAt: new Date()
+        };
+
+        const updatedAnnouncements = this.announcementsSubject.value.map((item) =>
+          item.id === id ? updatedAnnouncement : item
+        );
+
+        this.persist(updatedAnnouncements);
+        return updatedAnnouncement;
+      })
+    );
   }
 
   delete(id: string): Observable<void> {
-    return defer(() => {
-      const current = this.announcementsSubject.value;
-      const next = current.filter(a => a.id !== id);
-      return of(void 0).pipe(
-        delay(300),
-        tap(() => this.persist(next))
+    if (environment.authProvider === 'backend') {
+      return this.http.delete<void>(
+        `${environment.businessApiUrl}/announcements/${id}`
+      ).pipe(
+        tap(() => this.refreshActiveAnnouncements()),
+        catchError((err) => this.handleError(err, 'Erreur lors de la suppression de l’annonce'))
       );
-    });
+    }
+
+    return throwError(() => ({
+      message: 'La suppression n’est pas disponible.'
+    }));
+  }
+
+  private handleError(err: any, fallbackMessage: string): Observable<never> {
+    const message =
+      err?.error?.message ||
+      err?.error?.error ||
+      err?.message ||
+      fallbackMessage;
+
+    return throwError(() => ({ message }));
   }
 }

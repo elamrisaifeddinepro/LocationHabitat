@@ -5,6 +5,12 @@
     </mat-card-header>
 
     <mat-card-content>
+      <div
+        *ngIf="submitted && announcementForm().invalid()"
+        style="margin-bottom:16px; padding:12px; border-radius:8px; background:#fff3f3; color:#b42318; border:1px solid #f3b3b3;">
+        Le formulaire contient encore des erreurs. Vérifie les champs au-dessus avant de publier.
+      </div>
+
       <form (submit)="onSubmit($event)">
         <mat-form-field class="full-width">
           <mat-label>Titre</mat-label>
@@ -38,11 +44,60 @@
           <app-form-errors [field]="announcementForm.dateDisponibilite" [submitted]="submitted"></app-form-errors>
         </mat-form-field>
 
-        <mat-form-field class="full-width">
-          <mat-label>Photos (URLs séparées par virgules)</mat-label>
-          <textarea matInput rows="2" [field]="announcementForm.photos"></textarea>
+        <div class="full-width" style="margin-bottom: 16px;">
+          <label style="display:block; margin-bottom:8px; font-weight:500;">Photos de l'annonce</label>
+
+          <input
+            type="file"
+            multiple
+            accept="image/png,image/jpeg,image/webp"
+            (change)="onFilesSelected($event)"
+            style="margin-bottom: 12px;"
+          />
+
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              (click)="uploadSelectedImages()"
+              [disabled]="uploading || selectedFiles.length === 0">
+              {{ uploading ? 'Upload en cours...' : 'Uploader les images' }}
+            </button>
+
+            <span *ngIf="selectedFiles.length > 0">
+              {{ selectedFiles.length }} fichier(s) sélectionné(s)
+            </span>
+          </div>
+
+          <div *ngIf="uploadedImageUrls.length > 0" style="margin-bottom: 12px;">
+            <p style="margin-bottom: 8px;">Images uploadées :</p>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <div *ngFor="let url of uploadedImageUrls; let i = index" style="position:relative;">
+                <img
+                  [src]="url"
+                  alt="photo annonce"
+                  style="width:120px; height:90px; object-fit:cover; border-radius:8px; border:1px solid #ddd;" />
+
+                <button
+                  mat-button
+                  type="button"
+                  (click)="removeUploadedImage(i)"
+                  style="display:block; margin:4px auto 0 auto;">
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <mat-form-field class="full-width">
+            <mat-label>URLs des photos générées</mat-label>
+            <textarea matInput rows="2" [field]="announcementForm.photos"></textarea>
+          </mat-form-field>
+
           <app-form-errors [field]="announcementForm.photos" [submitted]="submitted"></app-form-errors>
-        </mat-form-field>
+        </div>
 
         <mat-form-field class="full-width">
           <mat-label>Adresse de localisation</mat-label>

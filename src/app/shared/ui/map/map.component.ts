@@ -1,4 +1,16 @@
-import { Component, DestroyRef, Input, OnInit, OnDestroy, AfterViewInit, OnChanges, SimpleChanges, ElementRef, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  Input,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  OnChanges,
+  SimpleChanges,
+  ElementRef,
+  ViewChild,
+  inject
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import { GeocodingService } from '../../../core/services/geocoding.service';
@@ -11,12 +23,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   template: `
     <div class="map-container">
       <div #mapContainer class="map"></div>
+
       @if (loading) {
         <div class="map-loading">
           <div class="spinner"></div>
           <span>Chargement de la carte...</span>
         </div>
       }
+
       @if (error) {
         <div class="map-error">
           <span>{{ error }}</span>
@@ -44,6 +58,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy
   private marker: L.Marker | null = null;
   private readonly destroyRef = inject(DestroyRef);
   private readonly timers: number[] = [];
+  private requestVersion = 0;
 
   loading = true;
   error: string | null = null;
@@ -60,13 +75,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.mapContainer) return;
+
     if (changes['lat'] || changes['lng'] || changes['address']) {
-      this.setTimer(() => this.loadMap(), 50);
+      this.setTimer(() => this.loadMap(), 80);
     }
   }
 
   ngOnDestroy(): void {
     this.clearTimers();
+
     if (this.map) {
       this.map.remove();
       this.map = null;
@@ -93,13 +110,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy
       popupAnchor: [1, -34],
       shadowSize: [41, 41]
     });
+
     L.Marker.prototype.options.icon = iconDefault;
   }
 
   private loadMap(): void {
     this.loading = true;
     this.error = null;
+    this.requestVersion += 1;
 
+    const currentRequest = this.requestVersion;
     const hasCoords = typeof this.lat === 'number' && typeof this.lng === 'number';
 
     if (hasCoords) {
@@ -117,6 +137,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy
     this.geocodingService.geocodeAddress(addr)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        if (currentRequest !== this.requestVersion) {
+          return;
+        }
+
         if (result) {
           this.initializeMap(result.lat, result.lng);
         } else {
@@ -127,13 +151,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy
   }
 
   private initializeMap(lat: number, lng: number): void {
-    if (this.map) this.map.remove();
+    if (this.map) {
+      this.map.remove();
+    }
 
     this.setTimer(() => {
       try {
         this.map = L.map(this.mapContainer.nativeElement, {
           center: [lat, lng],
-          zoom: 14,
+          zoom: 15,
           zoomControl: true,
           scrollWheelZoom: true
         });
@@ -150,29 +176,39 @@ export class MapComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy
         tileLayer.on('load', () => {
           if (!tilesLoaded) {
             tilesLoaded = true;
-            this.setTimer(() => { this.loading = false; }, 200);
+            this.setTimer(() => { this.loading = false; }, 150);
           }
         });
 
         tileLayer.addTo(this.map);
 
-        this.setTimer(() => { this.map?.invalidateSize(); }, 250);
+        this.setTimer(() => {
+          this.map?.invalidateSize();
+        }, 250);
 
-        const popupText = this.address ? `<strong>${this.address}</strong>` : `<strong>${lat}, ${lng}</strong>`;
+        const popupText = this.address
+          ? `<strong>${this.address}</strong>`
+          : `<strong>${lat}, ${lng}</strong>`;
 
-        this.marker = L.marker([lat, lng]).addTo(this.map).bindPopup(popupText, { maxWidth: 300 });
+        this.marker = L.marker([lat, lng])
+          .addTo(this.map)
+          .bindPopup(popupText, { maxWidth: 300 });
 
         this.setTimer(() => {
-          if (this.marker && !this.marker.isPopupOpen()) this.marker.openPopup();
-        }, 350);
+          if (this.marker && !this.marker.isPopupOpen()) {
+            this.marker.openPopup();
+          }
+        }, 300);
 
         this.setTimer(() => {
-          if (!tilesLoaded) this.loading = false;
+          if (!tilesLoaded) {
+            this.loading = false;
+          }
         }, 1500);
 
       } catch (e) {
         console.error('Error initializing map:', e);
-        this.error = 'Erreur lors de l\'initialisation de la carte';
+        this.error = 'Erreur lors de l’initialisation de la carte';
         this.loading = false;
       }
     }, 100);

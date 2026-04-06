@@ -45,10 +45,13 @@
           <div>
             <h1>{{ announcement.titre }}</h1>
             <button mat-stroked-button class="favorite-action" (click)="toggleFavorite()">
-              <mat-icon class="favorite-action-icon">{{ isFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+              <mat-icon class="favorite-action-icon">
+                {{ isFavorite ? 'favorite' : 'favorite_border' }}
+              </mat-icon>
               <span class="favorite-action-label"></span>
             </button>
           </div>
+
           <div class="price-badge">
             {{ announcement.mensualite | price }}/mois
           </div>
@@ -91,6 +94,7 @@
 
         <div class="owner-section">
           <h2>Propriétaire</h2>
+
           <div class="owner-info">
             <p>
               <strong>Nom:</strong>
@@ -98,10 +102,13 @@
                 {{ announcement.ownerName }}
               </a>
             </p>
+
             @if (isAuthenticated) {
               <p><strong>Email:</strong> {{ announcement.ownerEmail }}</p>
               <p><strong>Téléphone:</strong> {{ announcement.ownerPhone }}</p>
-            } @else {
+            }
+
+            @if (!isAuthenticated) {
               <p class="login-message">
                 <mat-icon>lock</mat-icon>
                 Connectez-vous pour voir les coordonnées
@@ -112,30 +119,58 @@
 
         @if (isAuthenticated && !isOwner) {
           <div class="contact-section">
-            <button mat-raised-button color="primary" (click)="toggleContactForm()">
-              <mat-icon>mail</mat-icon>
-              {{ showContactForm ? 'Annuler' : 'Contacter le propriétaire' }}
-            </button>
+            <div class="contact-actions">
+              <button mat-raised-button color="primary" (click)="toggleContactForm()">
+                <mat-icon>mail</mat-icon>
+                {{ showContactForm ? 'Annuler' : 'Contacter le propriétaire' }}
+              </button>
+
+              <a mat-stroked-button [href]="ownerMailtoLink">
+                <mat-icon>alternate_email</mat-icon>
+                Contacter par courriel
+              </a>
+            </div>
 
             @if (showContactForm) {
               <mat-card class="contact-form-card">
                 <h3>Envoyer un message</h3>
+
                 <form (submit)="sendMessage($event)">
                   <mat-form-field class="full-width">
                     <mat-label>Sujet</mat-label>
-                    <input matInput [field]="contactForm.sujet">
-                    <app-form-errors [field]="contactForm.sujet" [submitted]="submitted"></app-form-errors>
+                    <input
+                      id="contact-sujet"
+                      matInput
+                      [field]="contactForm.sujet">
+                    <app-form-errors
+                      [field]="contactForm.sujet"
+                      [submitted]="submitted">
+                    </app-form-errors>
                   </mat-form-field>
 
                   <mat-form-field class="full-width">
                     <mat-label>Message</mat-label>
-                    <textarea matInput rows="5" [field]="contactForm.texte"></textarea>
-                    <app-form-errors [field]="contactForm.texte" [submitted]="submitted"></app-form-errors>
+                    <textarea
+                      id="contact-texte"
+                      matInput
+                      rows="5"
+                      [field]="contactForm.texte"></textarea>
+                    <app-form-errors
+                      [field]="contactForm.texte"
+                      [submitted]="submitted">
+                    </app-form-errors>
                   </mat-form-field>
 
                   <div class="form-actions">
-                    <button mat-button type="button" (click)="toggleContactForm()">Annuler</button>
-                    <button mat-raised-button color="primary" type="submit" [disabled]="contactForm().invalid() || contactForm().submitting()">
+                    <button mat-button type="button" (click)="toggleContactForm()">
+                      Annuler
+                    </button>
+
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      type="submit"
+                      [disabled]="contactForm().invalid() || contactForm().submitting()">
                       Envoyer
                     </button>
                   </div>
@@ -143,7 +178,9 @@
               </mat-card>
             }
           </div>
-        } @else if (!isAuthenticated) {
+        }
+
+        @if (!isAuthenticated) {
           <div class="login-prompt">
             <p>Vous devez être connecté pour contacter le propriétaire</p>
             <button mat-raised-button color="primary" routerLink="/auth/login">
@@ -153,7 +190,9 @@
         }
       </mat-card-content>
     </mat-card>
-  } @else {
+  }
+
+  @if (!announcement) {
     <div class="not-found">
       <mat-icon>error_outline</mat-icon>
       <p>Annonce non trouvée</p>

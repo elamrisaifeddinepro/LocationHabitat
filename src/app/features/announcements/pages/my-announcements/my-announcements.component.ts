@@ -10,7 +10,6 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Announcement } from '../../../../models/announcement.model';
 import { AnnouncementService } from '../../../../core/services/announcement.service';
-import { AuthService } from '../../../../core/services/auth.service';
 import { PricePipe } from '../../../../shared/pipes/price.pipe';
 import { StatusPipe } from '../../../../shared/pipes/status.pipe';
 import { ConfirmDialogComponent } from '../../../../shared/ui/confirm-dialog/confirm-dialog.component';
@@ -41,7 +40,6 @@ export class MyAnnouncementsComponent implements OnInit {
 
   constructor(
     private announcementService: AnnouncementService,
-    private authService: AuthService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {}
@@ -51,50 +49,79 @@ export class MyAnnouncementsComponent implements OnInit {
   }
 
   private loadAnnouncements(): void {
-    const currentUser = this.authService.currentUserValue;
-    if (!currentUser) return;
-
-    this.announcementService.getByOwnerId(currentUser.id).pipe(
+    this.announcementService.getMyAnnouncements().pipe(
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe(announcements => {
-      this.announcements = announcements;
+    ).subscribe({
+      next: (announcements) => {
+        this.announcements = announcements;
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err?.message || 'Erreur lors du chargement de vos annonces',
+          'Fermer',
+          { duration: 3500 }
+        );
+      }
     });
   }
 
   toggleActive(announcement: Announcement): void {
-    this.announcementService.toggleActive(announcement.id).subscribe({
-      next: () => {
-        const status = !announcement.actif ? 'activée' : 'désactivée';
+    this.announcementService.toggleActive(announcement.id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (updatedAnnouncement) => {
+        this.announcements = this.announcements.map((item) =>
+          item.id === updatedAnnouncement.id ? updatedAnnouncement : item
+        );
+
+        const status = updatedAnnouncement.actif ? 'activée' : 'désactivée';
         this.snackBar.open(`Annonce ${status}`, 'Fermer', { duration: 3000 });
       },
-      error: () => {
-        this.snackBar.open('Erreur lors de la modification', 'Fermer', { duration: 3000 });
+      error: (err) => {
+        this.snackBar.open(
+          err?.message || 'Erreur lors de la modification',
+          'Fermer',
+          { duration: 3000 }
+        );
       }
     });
   }
 
   deleteAnnouncement(id: string): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
       data: {
-        title: "Supprimer l'annonce",
-        message: 'Cette action est irréversible. Voulez-vous vraiment supprimer cette annonce ?',
-        confirmLabel: 'Supprimer',
-        confirmColor: 'warn'
+        title: 'Supprimer l’annonce',
+        message: 'Voulez-vous vraiment supprimer cette annonce ?',
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler'
       }
     });
 
-    dialogRef.afterClosed().subscribe(confirmed => {
-      if (!confirmed) return;
+    dialogRef.afterClosed().pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((confirmed: boolean) => {
+      if (!confirmed) {
+        return;
+      }
 
-      this.announcementService.delete(id).subscribe({
+      this.announcementService.delete(id).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
         next: () => {
-          this.snackBar.open('Annonce supprimée', 'Fermer', { duration: 3000 });
+          this.announcements = this.announcements.filter((item) => item.id !== id);
+          this.snackBar.open('Annonce supprimée avec succès', 'Fermer', {
+            duration: 3000
+          });
         },
-        error: () => {
-          this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+        error: (err) => {
+          this.snackBar.open(
+            err?.message || 'Erreur lors de la suppression',
+            'Fermer',
+            { duration: 3500 }
+          );
         }
       });
     });
   }
 }
-

@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - include:
+      file: 001-create-users.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: 002-create-password-reset-tokens.yaml
+      relativeToChangelogFile: true

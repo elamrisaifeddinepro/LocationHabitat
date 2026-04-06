@@ -17,8 +17,8 @@
 
       <form (submit)="onSubmit($event)">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Objet</mat-label>
-          <input matInput placeholder="Objet du message" [field]="messageForm.objet">
+          <mat-label>Sujet</mat-label>
+          <input matInput placeholder="Sujet du message" [field]="messageForm.objet">
           <app-form-errors [field]="messageForm.objet" [submitted]="submitted"></app-form-errors>
         </mat-form-field>
 
@@ -37,6 +37,7 @@
           <button mat-button type="button" (click)="cancel()" [disabled]="loading">
             Annuler
           </button>
+
           <button
             mat-raised-button
             color="primary"

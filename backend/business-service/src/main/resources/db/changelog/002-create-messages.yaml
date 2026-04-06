@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-messages
+      author: chatgpt
+      changes:
+        - createTable:
+            tableName: messages
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: announcement_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: sender_auth_user_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: sender_email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: recipient_auth_user_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: recipient_email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: content
+                  type: TEXT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: is_read
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: messages
+            baseColumnNames: announcement_id
+            constraintName: fk_messages_announcement
+            referencedTableName: announcements
+            referencedColumnNames: id
+            onDelete: CASCADE

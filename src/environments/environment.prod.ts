@@ -1,0 +1,11 @@
+export const environment = {
+  production: true,
+
+  authProvider: 'backend' as 'mock' | 'supabase' | 'backend',
+
+  authApiUrl: 'http://localhost:8081/api/auth',
+  businessApiUrl: 'http://localhost:8082/api',
+
+  supabaseUrl: 'https://tozjblocziztrcdficfr.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvempibG9jeml6dHJjZGZpY2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4Mzc3ODMsImV4cCI6MjA4NjQxMzc4M30.R4yRz33yT6SgYOQViENhQ9Mpjv8dLjLzYjEeDpoxGnQ'
+};

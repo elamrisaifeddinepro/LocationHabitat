@@ -147,7 +147,7 @@ export const ANNOUNCEMENT_SCHEMA = schema<AnnouncementFormModel>((f) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (d < today) {
-      return customError({ kind: 'futureDate', message: 'La date doit être aujourd\'hui ou plus tard' });
+      return customError({ kind: 'futureDate', message: 'La date doit être aujourd’hui ou plus tard' });
     }
     return;
   });
@@ -161,7 +161,10 @@ export const ANNOUNCEMENT_SCHEMA = schema<AnnouncementFormModel>((f) => {
     const urlRegex = /^https?:\/\//i;
     const bad = urls.find((u) => !urlRegex.test(u));
     if (bad) {
-      return customError({ kind: 'photos', message: 'URLs invalides: utilisez http(s):// et séparez par virgules' });
+      return customError({
+        kind: 'photos',
+        message: 'URLs invalides: utilisez http(s):// et séparez par virgules'
+      });
     }
     return;
   });

@@ -15,6 +15,8 @@ export interface Announcement {
   ownerEmail: string;
   ownerPhone: string;
   vues: number;
+  nombrePieces?: number;
+  superficie?: number;
   createdAt: Date;
   updatedAt: Date;
 }

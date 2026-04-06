@@ -18,6 +18,10 @@
           <app-form-errors [field]="loginForm.password" [submitted]="submitted"></app-form-errors>
         </mat-form-field>
 
+        <div class="register-link" style="margin-top: 0; margin-bottom: 12px;">
+          <p><a routerLink="/auth/forgot-password">Mot de passe oublié ?</a></p>
+        </div>
+
         <button mat-raised-button color="primary" type="submit" [disabled]="loginForm().invalid() || loading" class="full-width">
           {{ loading ? 'Connexion...' : 'Se connecter' }}
         </button>

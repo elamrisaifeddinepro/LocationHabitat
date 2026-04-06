@@ -8,7 +8,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { AnnouncementService } from '../../../../core/services/announcement.service';
+import {
+  AnnouncementService,
+  CreateAnnouncementPayload,
+  UpdateAnnouncementPayload
+} from '../../../../core/services/announcement.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { GeocodingService } from '../../../../core/services/geocoding.service';
 import { CanComponentDeactivate } from '../../../../core/guards/form-leave.guard';
@@ -58,6 +62,10 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
 
   readonly geocodeWarning = signal<string | null>(null);
 
+  selectedFiles: File[] = [];
+  uploadedImageUrls: string[] = [];
+  uploading = false;
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly formSubmitted = signal(false);
   private readonly addressInput$ = new Subject<string>();
@@ -74,7 +82,7 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
   ngOnInit(): void {
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
+      .subscribe((params) => {
         this.announcementId = params.get('id');
         if (this.announcementId) {
           this.isEditMode = true;
@@ -84,10 +92,10 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
 
     this.addressInput$
       .pipe(
-        map(v => String(v ?? '').trim()),
+        map((v) => String(v ?? '').trim()),
         debounceTime(600),
         distinctUntilChanged(),
-        switchMap(addr => {
+        switchMap((addr) => {
           this.geocodeWarning.set(null);
 
           if (!addr || addr.length < 4) {
@@ -99,7 +107,7 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(res => {
+      .subscribe((res) => {
         if (!res?.result) {
           this.model.set({ ...this.model(), latitude: null, longitude: null });
           const addr = String(this.model().adresseLocalisation ?? '').trim();
@@ -138,11 +146,67 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
     this.addressInput$.next(value);
   }
 
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      this.selectedFiles = [];
+      return;
+    }
+
+    this.selectedFiles = Array.from(input.files);
+  }
+
+  async uploadSelectedImages(): Promise<void> {
+    if (this.selectedFiles.length === 0) {
+      this.snackBar.open('Veuillez sélectionner au moins une image', 'Fermer', { duration: 3000 });
+      return;
+    }
+
+    this.uploading = true;
+
+    try {
+      const uploaded = await firstValueFrom(
+        this.announcementService.uploadImages(this.selectedFiles)
+      );
+
+      const newUrls = uploaded.map((item) => item.url);
+
+      this.uploadedImageUrls = [...this.uploadedImageUrls, ...newUrls];
+
+      this.model.set({
+        ...this.model(),
+        photos: this.uploadedImageUrls.join(', ')
+      });
+
+      this.snackBar.open('Images uploadées avec succès !', 'Fermer', { duration: 3000 });
+      this.selectedFiles = [];
+    } catch (err: any) {
+      this.snackBar.open(
+        err?.message || "Erreur lors de l'upload des images",
+        'Fermer',
+        { duration: 3000 }
+      );
+    } finally {
+      this.uploading = false;
+    }
+  }
+
+  removeUploadedImage(index: number): void {
+    this.uploadedImageUrls = this.uploadedImageUrls.filter((_, i) => i !== index);
+
+    this.model.set({
+      ...this.model(),
+      photos: this.uploadedImageUrls.join(', ')
+    });
+  }
+
   private loadAnnouncement(id: string): void {
-    this.announcementService.getById(id)
+    this.announcementService.getOwnedById(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(announcement => {
+      .subscribe((announcement) => {
         if (!announcement) return;
+
+        this.uploadedImageUrls = announcement.photos ?? [];
 
         this.model.set({
           titre: announcement.titre,
@@ -150,7 +214,7 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
           descriptionLongue: announcement.descriptionLongue,
           mensualite: announcement.mensualite,
           dateDisponibilite: announcement.dateDisponibilite,
-          photos: announcement.photos.join(', '),
+          photos: this.uploadedImageUrls.join(', '),
           adresseLocalisation: announcement.adresseLocalisation,
           latitude: announcement.latitude ?? null,
           longitude: announcement.longitude ?? null
@@ -163,11 +227,94 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
       });
   }
 
+  private extractCityFromAddress(address: string): string {
+    const normalized = String(address ?? '').trim().replace(/\s+/g, ' ');
+    if (!normalized) return '';
+
+    const knownCities: Array<{ regex: RegExp; value: string }> = [
+      { regex: /\btrois[-\s]?rivieres\b/i, value: 'Trois-Rivières' },
+      { regex: /\bmontreal\b/i, value: 'Montréal' },
+      { regex: /\bquébec\b/i, value: 'Québec' },
+      { regex: /\bquebec\b/i, value: 'Québec' },
+      { regex: /\blaval\b/i, value: 'Laval' },
+      { regex: /\blongueuil\b/i, value: 'Longueuil' },
+      { regex: /\bgatineau\b/i, value: 'Gatineau' },
+      { regex: /\bsherbrooke\b/i, value: 'Sherbrooke' }
+    ];
+
+    for (const city of knownCities) {
+      if (city.regex.test(normalized)) {
+        return city.value;
+      }
+    }
+
+    const parts = normalized
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 2) {
+      const candidate = parts[parts.length - 2];
+      if (
+        candidate &&
+        !/\b(qc|québec|quebec|canada)\b/i.test(candidate) &&
+        !/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(candidate)
+      ) {
+        return candidate;
+      }
+    }
+
+    return '';
+  }
+
+  private formatAvailableDate(value: unknown): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const date = value instanceof Date ? value : new Date(value as string);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    return date.toISOString().split('T')[0];
+  }
+
+  private parsePhotos(value: unknown): string[] {
+    return String(value ?? '')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+
+  private focusFirstInvalidField(): void {
+    setTimeout(() => {
+      const firstInvalid = document.querySelector('.form-card .ng-invalid') as HTMLElement | null;
+      if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalid.focus?.();
+      }
+    }, 0);
+  }
+
+  private showValidationMessage(): void {
+    this.snackBar.open(
+      'Le formulaire contient encore des erreurs. Vérifie surtout le haut de la page.',
+      'Fermer',
+      { duration: 4500 }
+    );
+  }
+
   async onSubmit(event?: Event): Promise<void> {
     event?.preventDefault();
 
     this.submitted = true;
-    if (this.announcementForm().invalid()) return;
+
+    if (this.announcementForm().invalid()) {
+      this.showValidationMessage();
+      this.focusFirstInvalidField();
+      return;
+    }
 
     const currentUser = this.authService.currentUserValue;
     if (!currentUser) {
@@ -178,44 +325,57 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
     await submit(this.announcementForm, async (f) => {
       const v = f().value();
 
-      const photosArray = String(v.photos ?? '')
-        .split(',')
-        .map((url) => url.trim())
-        .filter(Boolean);
+      const address = String(v.adresseLocalisation ?? '').trim();
+      const city = this.extractCityFromAddress(address);
+      const photos = this.parsePhotos(v.photos);
 
-      const announcementData = {
-        ...v,
-        photos: photosArray,
-        mensualite: Number(v.mensualite),
-        dateDisponibilite: v.dateDisponibilite instanceof Date
-          ? v.dateDisponibilite
-          : new Date(String(v.dateDisponibilite)),
-        ownerId: currentUser.id,
-        ownerName: `${currentUser.prenom} ${currentUser.nom}`,
-        ownerEmail: currentUser.courriel,
-        ownerPhone: currentUser.telephone,
-        actif: true,
-        latitude: this.model().latitude,
-        longitude: this.model().longitude
+      const createPayload: CreateAnnouncementPayload = {
+        title: String(v.titre ?? '').trim(),
+        shortDescription: String(v.descriptionCourte ?? '').trim(),
+        longDescription: String(v.descriptionLongue ?? '').trim(),
+        availableDate: this.formatAvailableDate(v.dateDisponibilite),
+        photos,
+        city,
+        address,
+        monthlyRent: Number(v.mensualite),
+        numberOfRooms: 1,
+        area: 55
+      };
+
+      const updatePayload: UpdateAnnouncementPayload = {
+        title: createPayload.title,
+        shortDescription: createPayload.shortDescription,
+        longDescription: createPayload.longDescription,
+        availableDate: createPayload.availableDate,
+        photos: createPayload.photos,
+        city: createPayload.city,
+        address: createPayload.address,
+        monthlyRent: createPayload.monthlyRent,
+        numberOfRooms: createPayload.numberOfRooms,
+        area: createPayload.area
       };
 
       try {
         if (this.isEditMode && this.announcementId) {
-          await firstValueFrom(this.announcementService.update(this.announcementId, announcementData));
+          await firstValueFrom(this.announcementService.update(this.announcementId, updatePayload));
           this.formSubmitted.set(true);
-          this.snackBar.open('Annonce modifiée avec succès!', 'Fermer', { duration: 3000 });
-          this.router.navigate(['/my-announcements']);
+          this.snackBar.open('Annonce modifiée avec succès !', 'Fermer', { duration: 3000 });
         } else {
-          await firstValueFrom(this.announcementService.create(announcementData));
+          await firstValueFrom(this.announcementService.create(createPayload));
           this.formSubmitted.set(true);
-          this.snackBar.open('Annonce créée avec succès!', 'Fermer', { duration: 3000 });
-          this.router.navigate(['/my-announcements']);
+          this.snackBar.open('Annonce créée avec succès !', 'Fermer', { duration: 3000 });
         }
+
+        this.router.navigate(['/my-announcements']);
         return;
       } catch (err: any) {
+        const message = err?.message || 'Erreur lors de la sauvegarde';
+
+        this.snackBar.open(message, 'Fermer', { duration: 4000 });
+
         return customError({
           kind: 'server',
-          message: err?.message || 'Erreur lors de la sauvegarde',
+          message,
           field: this.announcementForm.titre
         });
       }

@@ -52,25 +52,57 @@ export class InboxComponent implements OnInit {
 
   private loadMessages(): void {
     const currentUser = this.authService.currentUserValue;
-    if (!currentUser) return;
+    if (!currentUser) {
+      this.isLoading = false;
+      this.messages = [];
+      return;
+    }
 
     this.isLoading = true;
+
     this.messageService.getReceivedMessages(currentUser.id).pipe(
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe(messages => {
-      this.messages = messages;
-      this.isLoading = false;
+    ).subscribe({
+      next: (messages) => {
+        this.messages = messages;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackBar.open(
+          err?.message || 'Erreur lors du chargement des messages',
+          'Fermer',
+          { duration: 3000 }
+        );
+      }
     });
   }
 
   toggleMessage(message: Message): void {
     if (this.expandedMessageId === message.id) {
       this.expandedMessageId = null;
-    } else {
-      this.expandedMessageId = message.id;
-      if (!message.read) {
-        this.messageService.markAsRead(message.id).subscribe();
-      }
+      return;
+    }
+
+    this.expandedMessageId = message.id;
+
+    if (!message.read) {
+      this.messageService.markAsRead(message.id).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
+        next: (updatedMessage) => {
+          this.messages = this.messages.map(m =>
+            m.id === updatedMessage.id ? updatedMessage : m
+          );
+        },
+        error: (err) => {
+          this.snackBar.open(
+            err?.message || 'Impossible de marquer le message comme lu',
+            'Fermer',
+            { duration: 3000 }
+          );
+        }
+      });
     }
   }
 
@@ -78,23 +110,40 @@ export class InboxComponent implements OnInit {
     event.stopPropagation();
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
       data: {
         title: 'Supprimer le message',
-        message: 'Voulez-vous vraiment supprimer ce message de votre boîte de réception ?',
-        confirmLabel: 'Supprimer',
-        confirmColor: 'warn'
+        message: 'Voulez-vous vraiment supprimer ce message ?',
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler'
       }
     });
 
-    dialogRef.afterClosed().subscribe(confirmed => {
+    dialogRef.afterClosed().pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((confirmed) => {
       if (!confirmed) return;
 
-      this.messageService.delete(messageId).subscribe({
+      this.messageService.delete(messageId).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
         next: () => {
-          this.snackBar.open('Message supprimé', 'Fermer', { duration: 3000 });
+          this.messages = this.messages.filter(message => message.id !== messageId);
+
+          if (this.expandedMessageId === messageId) {
+            this.expandedMessageId = null;
+          }
+
+          this.snackBar.open('Message supprimé avec succès', 'Fermer', {
+            duration: 2500
+          });
         },
-        error: () => {
-          this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+        error: (err) => {
+          this.snackBar.open(
+            err?.message || 'Erreur lors de la suppression du message',
+            'Fermer',
+            { duration: 3500 }
+          );
         }
       });
     });

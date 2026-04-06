@@ -2,11 +2,16 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { formLeaveGuard } from './core/guards/form-leave.guard';
+import { ResetPasswordComponent } from './features/auth/pages/reset-password/reset-password.component';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/home/pages/home/home.component').then(m => m.HomeComponent)
+  },
+  {
+    path: 'reset-password',
+    component: ResetPasswordComponent
   },
   {
     path: 'auth/login',
@@ -16,6 +21,16 @@ export const routes: Routes = [
   {
     path: 'auth/register',
     loadComponent: () => import('./features/auth/pages/register/register.component').then(m => m.RegisterComponent),
+    canActivate: [guestGuard]
+  },
+  {
+    path: 'auth/forgot-password',
+    loadComponent: () => import('./features/auth/pages/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
+    canActivate: [guestGuard]
+  },
+  {
+    path: 'auth/reset-password',
+    loadComponent: () => import('./features/auth/pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
     canActivate: [guestGuard]
   },
   {
@@ -38,7 +53,6 @@ export const routes: Routes = [
     path: 'announcements/:id',
     loadComponent: () => import('./features/announcements/pages/announcement-detail/announcement-detail.component').then(m => m.AnnouncementDetailComponent)
   },
-
   {
     path: 'favorites',
     loadComponent: () => import('./features/favorites/pages/favorites/favorites.component').then(m => m.FavoritesComponent),

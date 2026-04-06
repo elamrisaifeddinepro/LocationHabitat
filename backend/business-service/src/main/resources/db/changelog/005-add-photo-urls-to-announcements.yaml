@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-add-photo-urls-to-announcements
+      author: chatgpt
+      changes:
+        - addColumn:
+            tableName: announcements
+            columns:
+              - column:
+                  name: photo_urls
+                  type: TEXT

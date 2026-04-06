@@ -142,7 +142,6 @@
   color: var(--airbnb-text-primary);
 }
 
-
 .favorite-action {
   margin-top: 16px;
   min-height: 48px;
@@ -275,6 +274,16 @@ mat-divider {
   margin-top: 40px;
 }
 
+.contact-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.contact-actions a[mat-stroked-button] {
+  text-decoration: none;
+}
+
 .contact-form-card {
   margin-top: 24px;
   padding: 32px;
@@ -402,49 +411,56 @@ mat-divider {
     font-size: 24px;
   }
 
-  
-.favorite-action {
-  margin-top: 16px;
-  min-height: 48px;
-  padding: 0 18px !important;
-  border-radius: 999px !important;
-  border: 1px solid var(--airbnb-border-light) !important;
-  background: #fff !important;
-  color: var(--airbnb-text-primary) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 10px;
-  font-weight: 600;
-  line-height: 1;
-}
+  .favorite-action {
+    margin-top: 16px;
+    min-height: 48px;
+    padding: 0 18px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--airbnb-border-light) !important;
+    background: #fff !important;
+    color: var(--airbnb-text-primary) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px;
+    font-weight: 600;
+    line-height: 1;
+  }
 
-.favorite-action:hover {
-  background: #fff5f6 !important;
-  border-color: #f2b7bd !important;
-}
+  .favorite-action:hover {
+    background: #fff5f6 !important;
+    border-color: #f2b7bd !important;
+  }
 
-.favorite-action-icon {
-  margin: 0 !important;
-  color: #ff5a5f !important;
-  font-size: 20px !important;
-  width: 20px !important;
-  height: 20px !important;
-  line-height: 20px !important;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-}
+  .favorite-action-icon {
+    margin: 0 !important;
+    color: #ff5a5f !important;
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
 
-.favorite-action-label {
-  display: inline-flex;
-  align-items: center;
-  line-height: 1.2;
-}
+  .favorite-action-label {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.2;
+  }
 
-.price-badge {
+  .price-badge {
     width: 100%;
     text-align: center;
+  }
+
+  .contact-actions {
+    flex-direction: column;
+  }
+
+  .contact-actions > * {
+    width: 100%;
   }
 
   .contact-form-card {

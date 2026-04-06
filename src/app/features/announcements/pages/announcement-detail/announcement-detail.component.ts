@@ -70,39 +70,67 @@ export class AnnouncementDetailComponent implements OnInit {
 
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.loadAnnouncement(id);
-      }
-    });
+      .subscribe((params) => {
+        const id = params.get('id');
+        if (id) {
+          this.loadAnnouncement(id);
+        }
+      });
   }
 
   private loadAnnouncement(id: string): void {
-    this.announcementService.getById(id).pipe(
-      take(1)
-    ).subscribe(announcement => {
-      if (announcement) {
+    this.announcementService.getById(id)
+      .pipe(take(1))
+      .subscribe((announcement) => {
+        if (!announcement) {
+          this.announcement = null;
+          return;
+        }
+
         this.announcement = announcement;
         const currentUser = this.authService.currentUserValue;
         this.isOwner = currentUser ? currentUser.id === announcement.ownerId : false;
+        this.currentPhotoIndex = 0;
 
-        this.preloadImages(announcement.photos);
+        this.preloadImages(announcement.photos ?? []);
 
-        this.announcementService.incrementViews(id).pipe(
-          take(1)
-        ).subscribe();
-      }
-    });
+        this.announcementService.incrementViews(id)
+          .pipe(take(1))
+          .subscribe({
+            next: (updatedAnnouncement) => {
+              this.announcement = updatedAnnouncement;
+            },
+            error: () => {}
+          });
+      });
   }
 
   private preloadImages(urls: string[]): void {
     this.preloadedImages = [];
-    urls.forEach(url => {
+    (urls ?? []).forEach((url) => {
+      if (!url) return;
       const img = new Image();
       img.src = url;
       this.preloadedImages.push(img);
     });
+  }
+
+  get ownerMailtoLink(): string {
+    if (!this.announcement) return '#';
+
+    const currentUser = this.authService.currentUserValue;
+    const senderName = currentUser ? `${currentUser.prenom} ${currentUser.nom}` : '';
+    const senderEmail = currentUser?.courriel ? ` (${currentUser.courriel})` : '';
+
+    const subject = encodeURIComponent(`À propos de l'annonce : ${this.announcement.titre}`);
+    const body = encodeURIComponent(
+      `Bonjour ${this.announcement.ownerName},\n\n` +
+      `Je vous contacte au sujet de votre annonce "${this.announcement.titre}".\n\n` +
+      `Nom: ${senderName}${senderEmail}\n\n` +
+      `Message :\n`
+    );
+
+    return `mailto:${this.announcement.ownerEmail}?subject=${subject}&body=${body}`;
   }
 
   toggleContactForm(): void {
@@ -136,22 +164,24 @@ export class AnnouncementDetailComponent implements OnInit {
           announcementId: this.announcement!.id,
           announcementTitre: this.announcement!.titre
         }));
-        this.snackBar.open('Message envoyé avec succès!', 'Fermer', { duration: 3000 });
+
+        this.snackBar.open('Message envoyé avec succès !', 'Fermer', { duration: 3000 });
         this.contactForm().reset({ sujet: '', texte: '' });
         this.showContactForm = false;
         this.submitted = false;
         return;
-      } catch {
-        this.snackBar.open('Erreur lors de l\'envoi du message', 'Fermer', { duration: 3000 });
+      } catch (err: any) {
+        const message = err?.message || 'Erreur lors de l’envoi du message';
+        this.snackBar.open(message, 'Fermer', { duration: 3000 });
+
         return customError({
           kind: 'server',
-          message: 'Erreur lors de l\'envoi du message',
+          message,
           field: this.contactForm.texte
         });
       }
     });
   }
-
 
   get isFavorite(): boolean {
     return this.announcement ? this.favoritesService.isFavorite(this.announcement.id) : false;
@@ -187,7 +217,7 @@ export class AnnouncementDetailComponent implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent): void {
-    if (!this.announcement) return;
+    if (!this.announcement || !this.announcement.photos?.length) return;
 
     switch (event.key) {
       case 'ArrowLeft':
@@ -202,13 +232,13 @@ export class AnnouncementDetailComponent implements OnInit {
   }
 
   nextPhoto(): void {
-    if (this.announcement) {
+    if (this.announcement && this.announcement.photos.length > 0) {
       this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.announcement.photos.length;
     }
   }
 
   previousPhoto(): void {
-    if (this.announcement) {
+    if (this.announcement && this.announcement.photos.length > 0) {
       this.currentPhotoIndex = this.currentPhotoIndex === 0
         ? this.announcement.photos.length - 1
         : this.currentPhotoIndex - 1;
@@ -216,6 +246,7 @@ export class AnnouncementDetailComponent implements OnInit {
   }
 
   goToPhoto(index: number): void {
+    if (!this.announcement || !this.announcement.photos.length) return;
     this.currentPhotoIndex = index;
   }
 }

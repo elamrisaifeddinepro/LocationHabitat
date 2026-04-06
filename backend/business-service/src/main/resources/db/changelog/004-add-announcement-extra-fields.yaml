@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-announcement-extra-fields
+      author: chatgpt
+      changes:
+        - addColumn:
+            tableName: announcements
+            columns:
+              - column:
+                  name: short_description
+                  type: VARCHAR(500)
+                  defaultValue: "Description courte à compléter"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: long_description
+                  type: TEXT
+                  defaultValue: "Description longue à compléter"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: available_date
+                  type: DATE
