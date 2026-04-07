@@ -3,7 +3,7 @@ export const environment = {
 
   authProvider: 'backend' as 'mock' | 'supabase' | 'backend',
 
-  authApiUrl: 'http://localhost:8081/api/auth',
+  authApiUrl: 'https://locationhabitat-auth-service.onrender.com/api/auth',
   businessApiUrl: 'http://localhost:8082/api',
 
   supabaseUrl: 'https://tozjblocziztrcdficfr.supabase.co',
