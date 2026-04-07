@@ -6,8 +6,8 @@ import { environment } from '../../../environments/environment';
 
 interface BusinessMessageResponse {
   id: number;
-  announcementId: number;
-  announcementTitle: string;
+  announcementId: number | null;
+  announcementTitle: string | null;
   senderAuthUserId: string;
   senderEmail: string;
   recipientAuthUserId: string;
@@ -27,16 +27,16 @@ export class MessageService {
   private toFrontendMessage(api: BusinessMessageResponse): Message {
     return {
       id: String(api.id),
-      sujet: api.subject,
-      texte: api.content,
-      senderId: api.senderAuthUserId,
-      senderName: api.senderEmail,
-      receiverId: api.recipientAuthUserId,
-      receiverName: api.recipientEmail,
-      announcementId: String(api.announcementId),
-      announcementTitre: api.announcementTitle,
-      read: api.isRead,
-      createdAt: new Date(api.createdAt)
+      sujet: api.subject ?? '',
+      texte: api.content ?? '',
+      senderId: api.senderAuthUserId ?? '',
+      senderName: api.senderEmail ?? '',
+      receiverId: api.recipientAuthUserId ?? '',
+      receiverName: api.recipientEmail ?? '',
+      announcementId: api.announcementId != null ? String(api.announcementId) : '',
+      announcementTitre: api.announcementTitle ?? 'Annonce',
+      read: !!api.isRead,
+      createdAt: api.createdAt ? new Date(api.createdAt) : new Date()
     };
   }
 
@@ -63,8 +63,8 @@ export class MessageService {
   send(message: Omit<Message, 'id' | 'read' | 'createdAt'>): Observable<Message> {
     const payload = {
       announcementId: Number(message.announcementId),
-      subject: message.sujet?.trim(),
-      content: message.texte?.trim()
+      subject: (message.sujet ?? '').trim(),
+      content: (message.texte ?? '').trim()
     };
 
     return this.http.post<BusinessMessageResponse>(`${environment.businessApiUrl}/messages`, payload).pipe(

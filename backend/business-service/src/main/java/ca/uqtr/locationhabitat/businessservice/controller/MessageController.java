@@ -2,6 +2,7 @@ package ca.uqtr.locationhabitat.businessservice.controller;
 
 import ca.uqtr.locationhabitat.businessservice.dto.CreateMessageRequest;
 import ca.uqtr.locationhabitat.businessservice.dto.MessageResponse;
+import ca.uqtr.locationhabitat.businessservice.entity.Announcement;
 import ca.uqtr.locationhabitat.businessservice.entity.Message;
 import ca.uqtr.locationhabitat.businessservice.security.JwtUserPrincipal;
 import ca.uqtr.locationhabitat.businessservice.service.MessageService;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -96,22 +98,28 @@ public class MessageController {
     }
 
     private JwtUserPrincipal getCurrentUser(Authentication authentication) {
-        return (JwtUserPrincipal) authentication.getPrincipal();
+        if (authentication == null || !(authentication.getPrincipal() instanceof JwtUserPrincipal currentUser)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non authentifié");
+        }
+        return currentUser;
     }
 
     private MessageResponse toResponse(Message message) {
         MessageResponse response = new MessageResponse();
+        Announcement announcement = message.getAnnouncement();
+
         response.setId(message.getId());
-        response.setAnnouncementId(message.getAnnouncement().getId());
-        response.setAnnouncementTitle(message.getAnnouncement().getTitle());
+        response.setAnnouncementId(announcement != null ? announcement.getId() : null);
+        response.setAnnouncementTitle(announcement != null ? announcement.getTitle() : "Annonce indisponible");
         response.setSenderAuthUserId(message.getSenderAuthUserId());
         response.setSenderEmail(message.getSenderEmail());
         response.setRecipientAuthUserId(message.getRecipientAuthUserId());
         response.setRecipientEmail(message.getRecipientEmail());
         response.setSubject(message.getSubject());
         response.setContent(message.getContent());
-        response.setIsRead(message.getIsRead());
+        response.setIsRead(Boolean.TRUE.equals(message.getIsRead()));
         response.setCreatedAt(message.getCreatedAt());
+
         return response;
     }
 }

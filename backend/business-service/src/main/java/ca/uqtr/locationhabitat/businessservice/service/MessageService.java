@@ -37,7 +37,15 @@ public class MessageService {
             );
         }
 
-        if (announcement.getOwnerAuthUserId().equals(currentUser.getAuthUserId())) {
+        String ownerAuthUserId = announcement.getOwnerAuthUserId();
+        if (ownerAuthUserId == null || ownerAuthUserId.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le propriétaire de cette annonce est introuvable"
+            );
+        }
+
+        if (ownerAuthUserId.equals(currentUser.getAuthUserId())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Vous ne pouvez pas vous envoyer un message à vous-même"
@@ -48,22 +56,28 @@ public class MessageService {
         message.setAnnouncement(announcement);
         message.setSenderAuthUserId(currentUser.getAuthUserId());
         message.setSenderEmail(currentUser.getEmail());
-        message.setRecipientAuthUserId(announcement.getOwnerAuthUserId());
+        message.setRecipientAuthUserId(ownerAuthUserId);
         message.setRecipientEmail(announcement.getOwnerEmail());
-        message.setSubject(request.getSubject().trim());
-        message.setContent(request.getContent().trim());
+        message.setSubject(normalizeRequiredText(request.getSubject(), "Le sujet est requis"));
+        message.setContent(normalizeRequiredText(request.getContent(), "Le contenu du message est requis"));
 
         return messageRepository.save(message);
     }
 
     @Transactional(readOnly = true)
     public List<Message> getInbox(JwtUserPrincipal currentUser) {
-        return messageRepository.findByRecipientAuthUserIdOrderByCreatedAtDesc(currentUser.getAuthUserId());
+        return messageRepository.findByRecipientAuthUserIdOrderByCreatedAtDesc(currentUser.getAuthUserId())
+                .stream()
+                .filter(this::hasValidAnnouncement)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<Message> getSentMessages(JwtUserPrincipal currentUser) {
-        return messageRepository.findBySenderAuthUserIdOrderByCreatedAtDesc(currentUser.getAuthUserId());
+        return messageRepository.findBySenderAuthUserIdOrderByCreatedAtDesc(currentUser.getAuthUserId())
+                .stream()
+                .filter(this::hasValidAnnouncement)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -71,16 +85,22 @@ public class MessageService {
         Announcement announcement = announcementRepository.findById(announcementId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable"));
 
-        boolean isOwner = announcement.getOwnerAuthUserId().equals(currentUser.getAuthUserId());
+        boolean isOwner = announcement.getOwnerAuthUserId() != null
+                && announcement.getOwnerAuthUserId().equals(currentUser.getAuthUserId());
 
         if (isOwner) {
-            return messageRepository.findByAnnouncementIdOrderByCreatedAtAsc(announcementId);
+            return messageRepository.findByAnnouncementIdOrderByCreatedAtAsc(announcementId)
+                    .stream()
+                    .filter(this::hasValidAnnouncement)
+                    .toList();
         }
 
         return messageRepository.findByAnnouncementIdAndSenderAuthUserIdOrderByCreatedAtAsc(
-                announcementId,
-                currentUser.getAuthUserId()
-        );
+                        announcementId,
+                        currentUser.getAuthUserId()
+                ).stream()
+                .filter(this::hasValidAnnouncement)
+                .toList();
     }
 
     @Transactional
@@ -107,8 +127,10 @@ public class MessageService {
                         "Message introuvable"
                 ));
 
-        boolean isRecipient = message.getRecipientAuthUserId().equals(currentUser.getAuthUserId());
-        boolean isSender = message.getSenderAuthUserId().equals(currentUser.getAuthUserId());
+        boolean isRecipient = message.getRecipientAuthUserId() != null
+                && message.getRecipientAuthUserId().equals(currentUser.getAuthUserId());
+        boolean isSender = message.getSenderAuthUserId() != null
+                && message.getSenderAuthUserId().equals(currentUser.getAuthUserId());
 
         if (!isRecipient && !isSender) {
             throw new ResponseStatusException(
@@ -118,5 +140,16 @@ public class MessageService {
         }
 
         messageRepository.delete(message);
+    }
+
+    private boolean hasValidAnnouncement(Message message) {
+        return message != null && message.getAnnouncement() != null;
+    }
+
+    private String normalizeRequiredText(String value, String errorMessage) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorMessage);
+        }
+        return value.trim();
     }
 }
