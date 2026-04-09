@@ -440,12 +440,29 @@ export class AnnouncementService {
   }
 
   private handleError(err: any, fallbackMessage: string): Observable<never> {
+    console.error('Erreur backend complète:', err);
+
+    const fieldErrors = err?.error?.fieldErrors;
+
+    const firstFieldMessage =
+      fieldErrors && typeof fieldErrors === 'object'
+        ? Object.values(fieldErrors).find(
+            (value): value is string =>
+              typeof value === 'string' && value.trim().length > 0
+          )
+        : null;
+
     const message =
+      firstFieldMessage ||
       err?.error?.message ||
       err?.error?.error ||
       err?.message ||
       fallbackMessage;
 
-    return throwError(() => ({ message }));
+    return throwError(() => ({
+      message,
+      fieldErrors,
+      raw: err
+    }));
   }
 }

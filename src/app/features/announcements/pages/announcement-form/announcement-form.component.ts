@@ -231,10 +231,14 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
     const normalized = String(address ?? '').trim().replace(/\s+/g, ' ');
     if (!normalized) return '';
 
+    const source = normalized
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
     const knownCities: Array<{ regex: RegExp; value: string }> = [
       { regex: /\btrois[-\s]?rivieres\b/i, value: 'Trois-Rivières' },
       { regex: /\bmontreal\b/i, value: 'Montréal' },
-      { regex: /\bquébec\b/i, value: 'Québec' },
       { regex: /\bquebec\b/i, value: 'Québec' },
       { regex: /\blaval\b/i, value: 'Laval' },
       { regex: /\blongueuil\b/i, value: 'Longueuil' },
@@ -243,7 +247,7 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
     ];
 
     for (const city of knownCities) {
-      if (city.regex.test(normalized)) {
+      if (city.regex.test(source)) {
         return city.value;
       }
     }
@@ -253,14 +257,18 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
       .map((part) => part.trim())
       .filter(Boolean);
 
-    if (parts.length >= 2) {
-      const candidate = parts[parts.length - 2];
-      if (
-        candidate &&
-        !/\b(qc|québec|quebec|canada)\b/i.test(candidate) &&
-        !/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(candidate)
-      ) {
-        return candidate;
+    const provinceOrCountry = /^(qc|québec|quebec|on|ontario|canada)$/i;
+    const postalCode = /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/i;
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i];
+
+      if (provinceOrCountry.test(part)) continue;
+      if (postalCode.test(part)) continue;
+      if (i === 0 && /\d/.test(part)) continue;
+
+      if (/[A-Za-zÀ-ÿ]/.test(part)) {
+        return part;
       }
     }
 
@@ -328,6 +336,24 @@ export class AnnouncementFormComponent implements OnInit, CanComponentDeactivate
       const address = String(v.adresseLocalisation ?? '').trim();
       const city = this.extractCityFromAddress(address);
       const photos = this.parsePhotos(v.photos);
+
+      if (!city) {
+        this.geocodeWarning.set(
+          'Ajoute la ville dans l’adresse. Exemple : 1056 rue Marguerite Bourgeoys, Trois-Rivières, Canada.'
+        );
+
+        this.snackBar.open(
+          'Ville introuvable dans l’adresse. Ajoute la ville clairement.',
+          'Fermer',
+          { duration: 4500 }
+        );
+
+        return customError({
+          kind: 'cityRequired',
+          message: 'La ville est obligatoire dans l’adresse',
+          field: this.announcementForm.adresseLocalisation
+        });
+      }
 
       const createPayload: CreateAnnouncementPayload = {
         title: String(v.titre ?? '').trim(),
