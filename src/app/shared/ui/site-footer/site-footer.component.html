@@ -5,8 +5,6 @@
         <h3>Location Habitat</h3>
         <a routerLink="/">À propos</a>
         <a routerLink="/announcements">Découvrir les annonces</a>
-        <a routerLink="/register">Créer un compte</a>
-        <a routerLink="/announcement/new">Publier une annonce</a>
       </div>
 
       <div class="footer-column">
@@ -19,27 +17,22 @@
 
       <div class="footer-column">
         <h3>Infos</h3>
-        <a href="javascript:void(0)">Conditions d'utilisation</a>
-        <a href="javascript:void(0)">Politique de confidentialité</a>
-        <a href="javascript:void(0)">Sécurité</a>
-        <a href="javascript:void(0)">FAQ</a>
+        <a routerLink="/auth/login">Conditions d'utilisation</a>
+        <a routerLink="/auth/forgot-password">Politique de confidentialité</a>
+        <a routerLink="/profile">Sécurité</a>
+        <a routerLink="/announcements">FAQ</a>
       </div>
 
       <div class="footer-column">
         <h3>Soutien</h3>
-        <a href="javascript:void(0)">Centre d'aide</a>
-        <a href="javascript:void(0)">Contact</a>
-        <a href="javascript:void(0)">Accessibilité</a>
-        <a href="javascript:void(0)">Signaler un problème</a>
+        <a routerLink="/messages">Centre d'aide</a>
+        <a routerLink="/profile">Contact</a>
+        <a routerLink="/announcements">Accessibilité</a>
+        <a routerLink="/messages/send">Signaler un problème</a>
       </div>
     </div>
 
     <div class="footer-actions">
-      <a class="footer-btn primary" routerLink="/announcement/new">
-        <mat-icon>add_home</mat-icon>
-        Publier une annonce
-      </a>
-
       <a class="footer-btn secondary" routerLink="/announcements">
         <mat-icon>search</mat-icon>
         Voir les annonces
@@ -47,16 +40,16 @@
     </div>
 
     <div class="footer-socials">
-      <a href="javascript:void(0)" aria-label="Facebook">
+      <a routerLink="/" aria-label="Facebook">
         <mat-icon>facebook</mat-icon>
       </a>
-      <a href="javascript:void(0)" aria-label="Instagram">
+      <a routerLink="/" aria-label="Instagram">
         <mat-icon>photo_camera</mat-icon>
       </a>
-      <a href="javascript:void(0)" aria-label="YouTube">
+      <a routerLink="/" aria-label="YouTube">
         <mat-icon>smart_display</mat-icon>
       </a>
-      <a href="javascript:void(0)" aria-label="Email">
+      <a routerLink="/messages" aria-label="Email">
         <mat-icon>mail</mat-icon>
       </a>
     </div>
