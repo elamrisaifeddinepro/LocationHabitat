@@ -11,7 +11,7 @@ import { Observable, map } from 'rxjs';
 import { Announcement } from '../../../../models/announcement.model';
 import { AnnouncementService } from '../../../../core/services/announcement.service';
 import { AnnouncementCardComponent } from '../../../announcements/components/announcement-card/announcement-card.component';
-
+import { SiteFooterComponent } from '../../../../shared/ui/site-footer/site-footer.component';
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -24,7 +24,8 @@ import { AnnouncementCardComponent } from '../../../announcements/components/ann
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    AnnouncementCardComponent
+    AnnouncementCardComponent,
+    SiteFooterComponent
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
