@@ -58,7 +58,7 @@ public class AuthController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<UserResponse> updateProfile(
+    public ResponseEntity<AuthResponse> updateProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateProfileRequest request
     ) {

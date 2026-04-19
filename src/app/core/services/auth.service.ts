@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, map, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { User } from '../../models/user.model';
 import { StorageService } from './storage.service';
+import { SILENT_HTTP_ERROR } from '../interceptors/http-error.interceptor';
 
 interface AuthApiUser {
   id: string;
@@ -51,7 +52,7 @@ export class AuthService {
 
     const token = this.getToken();
     if (environment.authProvider === 'backend' && token) {
-      this.fetchMe().subscribe({
+      this.fetchMe(true).subscribe({
         error: () => this.clearSession()
       });
     }
@@ -115,12 +116,8 @@ export class AuthService {
       currentPassword: currentPassword.trim()
     };
 
-    return this.http.put<AuthApiUser>(`${environment.authApiUrl}/me`, payload).pipe(
-      map((apiUser) => {
-        const user = this.normalizeUser(apiUser, currentUser.createdAt);
-        this.persistCurrentUser(user);
-        return user;
-      }),
+    return this.http.put<AuthResponse>(`${environment.authApiUrl}/me`, payload).pipe(
+      map((response) => this.persistAuthResponse(response)),
       catchError((err) => this.handleError(err, 'Erreur lors de la mise à jour du profil'))
     );
   }
@@ -143,8 +140,12 @@ export class AuthService {
     );
   }
 
-  fetchMe(): Observable<User> {
-    return this.http.get<AuthApiUser>(`${environment.authApiUrl}/me`).pipe(
+  fetchMe(silent = false): Observable<User> {
+    const context = silent
+      ? new HttpContext().set(SILENT_HTTP_ERROR, true)
+      : new HttpContext();
+
+    return this.http.get<AuthApiUser>(`${environment.authApiUrl}/me`, { context }).pipe(
       map((apiUser) => {
         const user = this.normalizeUser(apiUser, this.currentUserValue?.createdAt);
         this.persistCurrentUser(user);

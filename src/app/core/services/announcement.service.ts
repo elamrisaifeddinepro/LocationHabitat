@@ -6,6 +6,7 @@ import {
   catchError,
   map,
   of,
+  switchMap,
   take,
   tap,
   throwError
@@ -231,15 +232,15 @@ export class AnnouncementService {
     );
   }
 
-  private refreshActiveAnnouncements(): void {
+  private refreshActiveAnnouncements(): Observable<Announcement[]> {
     if (environment.authProvider !== 'backend') {
-      return;
+      return of(this.announcementsSubject.value);
     }
 
-    this.loadActiveAnnouncements().pipe(take(1)).subscribe({
-      next: (announcements) => this.persist(announcements),
-      error: () => {}
-    });
+    return this.loadActiveAnnouncements().pipe(
+      take(1),
+      tap((announcements) => this.persist(announcements))
+    );
   }
 
   getAll(): Observable<Announcement[]> {
@@ -332,7 +333,11 @@ export class AnnouncementService {
         payload
       ).pipe(
         map((item) => this.toFrontendAnnouncement(item)),
-        tap(() => this.refreshActiveAnnouncements()),
+        switchMap((createdAnnouncement) =>
+          this.refreshActiveAnnouncements().pipe(
+            map(() => createdAnnouncement)
+          )
+        ),
         catchError((err) => this.handleError(err, 'Erreur lors de la création de l’annonce'))
       );
     }
@@ -364,7 +369,11 @@ export class AnnouncementService {
         payload
       ).pipe(
         map((item) => this.toFrontendAnnouncement(item)),
-        tap(() => this.refreshActiveAnnouncements()),
+        switchMap((updatedAnnouncement) =>
+          this.refreshActiveAnnouncements().pipe(
+            map(() => updatedAnnouncement)
+          )
+        ),
         catchError((err) => this.handleError(err, 'Erreur lors de la modification de l’annonce'))
       );
     }
@@ -381,7 +390,11 @@ export class AnnouncementService {
         {}
       ).pipe(
         map((item) => this.toFrontendAnnouncement(item)),
-        tap(() => this.refreshActiveAnnouncements()),
+        switchMap((updatedAnnouncement) =>
+          this.refreshActiveAnnouncements().pipe(
+            map(() => updatedAnnouncement)
+          )
+        ),
         catchError((err) => this.handleError(err, 'Erreur lors du changement de statut'))
       );
     }
@@ -429,7 +442,11 @@ export class AnnouncementService {
       return this.http.delete<void>(
         `${environment.businessApiUrl}/announcements/${id}`
       ).pipe(
-        tap(() => this.refreshActiveAnnouncements()),
+        switchMap(() =>
+          this.refreshActiveAnnouncements().pipe(
+            map(() => void 0)
+          )
+        ),
         catchError((err) => this.handleError(err, 'Erreur lors de la suppression de l’annonce'))
       );
     }

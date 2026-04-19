@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -84,23 +83,23 @@ public class AuthService {
     }
 
     @Transactional
-     public Map<String, String> forgotPassword(ForgotPasswordRequest request) {
+    public Map<String, String> forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByCourriel(request.getCourriel())
-            .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Aucun utilisateur trouvé avec ce courriel"
-            ));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Aucun utilisateur trouvé avec ce courriel"
+                ));
 
         passwordResetTokenRepository.deleteByUser(user);
 
         String generatedToken = UUID.randomUUID().toString();
 
         PasswordResetToken resetToken = PasswordResetToken.builder()
-            .token(generatedToken)
-            .user(user)
-            .expiresAt(LocalDateTime.now().plusHours(1))
-            .used(false)
-            .build();
+                .token(generatedToken)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(1))
+                .used(false)
+                .build();
 
         passwordResetTokenRepository.save(resetToken);
 
@@ -150,7 +149,7 @@ public class AuthService {
         return mapToUserResponse(user);
     }
 
-    public UserResponse updateProfile(String currentCourriel, UpdateProfileRequest request) {
+    public AuthResponse updateProfile(String currentCourriel, UpdateProfileRequest request) {
         User user = userRepository.findByCourriel(currentCourriel)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
@@ -182,7 +181,12 @@ public class AuthService {
         user.setAdresse(request.getAdresse().trim());
 
         User updatedUser = userRepository.save(user);
-        return mapToUserResponse(updatedUser);
+        String newToken = jwtService.generateToken(updatedUser);
+
+        return AuthResponse.builder()
+                .token(newToken)
+                .user(mapToUserResponse(updatedUser))
+                .build();
     }
 
     private UserResponse mapToUserResponse(User user) {
