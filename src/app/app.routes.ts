@@ -10,6 +10,80 @@ export const routes: Routes = [
     loadComponent: () => import('./features/home/pages/home/home.component').then(m => m.HomeComponent)
   },
   {
+    path: 'about',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: 'À propos',
+      description: 'Location Habitat est une plateforme moderne de location immobilière qui permet de consulter, publier et gérer des annonces de logements de manière simple, rapide et sécurisée.'
+    }
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: "Conditions d'utilisation",
+      description: "Cette page présente les règles générales d’utilisation de la plateforme Location Habitat, les responsabilités des utilisateurs et les conditions d’accès aux services proposés."
+    }
+  },
+  {
+    path: 'privacy',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: 'Politique de confidentialité',
+      description: 'Cette page explique comment les données personnelles des utilisateurs sont collectées, utilisées, protégées et conservées sur la plateforme.'
+    }
+  },
+  {
+    path: 'security',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: 'Sécurité',
+      description: 'Location Habitat met en œuvre des mécanismes de sécurité pour protéger les comptes utilisateurs, les échanges et les données sensibles.'
+    }
+  },
+  {
+    path: 'faq',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: 'FAQ',
+      description: 'Retrouvez ici les réponses aux questions fréquentes concernant l’inscription, la connexion, la publication des annonces, la messagerie et la gestion du compte.'
+    }
+  },
+  {
+    path: 'help',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: "Centre d'aide",
+      description: 'Le centre d’aide vous accompagne dans l’utilisation du site et vous guide dans les principales actions disponibles sur la plateforme.'
+    }
+  },
+  {
+    path: 'contact',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: 'Contact',
+      description: 'Vous pouvez utiliser cette page pour contacter l’équipe de la plateforme ou obtenir des informations générales sur le service.'
+    }
+  },
+  {
+    path: 'accessibility',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    data: {
+      title: 'Accessibilité',
+      description: 'Location Habitat cherche à proposer une navigation claire, lisible et accessible à tous les utilisateurs sur différents appareils.'
+    }
+  },
+  {
+    path: 'report-issue',
+    loadComponent: () => import('./features/static/pages/static-page/static-page.component').then(m => m.StaticPageComponent),
+    canActivate: [authGuard],
+    data: {
+      title: 'Signaler un problème',
+      description: 'Cette page permet à un utilisateur connecté de signaler un problème technique, une erreur d’affichage ou un comportement inattendu sur la plateforme.',
+      protectedPage: true
+    }
+  },
+  {
     path: 'reset-password',
     component: ResetPasswordComponent
   },

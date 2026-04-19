@@ -1,0 +1,25 @@
+<section class="static-page">
+  <div class="static-page-container">
+    <div class="static-page-card">
+      <div class="page-badge" *ngIf="protectedPage">
+        <mat-icon>lock</mat-icon>
+        <span>Connexion requise</span>
+      </div>
+
+      <h1>{{ title }}</h1>
+      <p>{{ description }}</p>
+
+      <div class="page-actions">
+        <a mat-raised-button color="primary" routerLink="/">
+          <mat-icon>home</mat-icon>
+          Accueil
+        </a>
+
+        <a mat-stroked-button routerLink="/announcements">
+          <mat-icon>search</mat-icon>
+          Voir les annonces
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
