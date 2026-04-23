@@ -1,12 +1,7 @@
 export const environment = {
   production: false,
 
-  /**
-   * Modes disponibles :
-   * - 'mock'
-   * - 'supabase'
-   * - 'backend'
-   */
+  
   authProvider: 'backend' as 'mock' | 'supabase' | 'backend',
 
   authApiUrl: 'https://locationhabitat-auth-service.onrender.com/api/auth',

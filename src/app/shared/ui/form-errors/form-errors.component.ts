@@ -16,7 +16,7 @@ import type { FieldTree, ValidationError } from '@angular/forms/signals';
   `
 })
 export class FormErrorsComponent {
-  // IMPORTANT: avoid `any` here, because `FieldTree<any>` becomes the compat type.
+  
   @Input({ required: true }) field!: FieldTree<unknown>;
   @Input() submitted = false;
 

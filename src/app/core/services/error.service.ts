@@ -12,9 +12,7 @@ export class ErrorService {
     this.snackBar.open(msg, 'Fermer', { duration: 3500 });
   }
 
-  /**
-   * RxJS operator that shows a snackbar and rethrows the error.
-   */
+  
   handle<T>(fallbackMessage?: string, opts?: { silent?: boolean }): OperatorFunction<T, T> {
     return (source: Observable<T>) =>
       source.pipe(
